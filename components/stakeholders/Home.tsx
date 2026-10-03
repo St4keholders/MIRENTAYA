@@ -13,7 +13,7 @@ const OPCIONES = [
   { href: '/personalizado', t: 'Servicio personalizado', d: 'Trámites y casos puntuales, revisados por un contador.', x: '71%', y: '86%', d0: '9s', dl: '-1s', dx: '4px', in: '1s' },
 ];
 
-const TITULO = 'Tus cuentas claras, de la nómina a la DIAN';
+const TITULO = 'Un área contable completa, fuera de tu oficina';
 
 export default function Home() {
   const [in_, setIn] = useState(false);
@@ -38,12 +38,18 @@ export default function Home() {
               </Fragment>
             ))}
           </h1>
-          <p className="lead fade" style={{ transitionDelay: '.45s' }}>
-            Contabilidad y nómina para empresas, declaración de renta para personas. Elige lo que necesitas resolver.
-          </p>
+          <h2 className="lead fade" style={{ transitionDelay: '.45s', fontSize: 'clamp(1.05rem, 2.2vw, 1.25rem)', lineHeight: 1.55, fontWeight: 400, color: 'var(--dim)', marginTop: '20px' }}>
+            Contadores públicos que llevan la contabilidad y la nómina de tu empresa. Y si eres persona natural, también te ayudamos con tu declaración de renta.
+          </h2>
+          <div className="home__cta-wrap fade" style={{ transitionDelay: '.65s', marginTop: '26px' }}>
+            <a href="#servicios" className="home__cta-btn">
+              <span>Elige lo que necesitas resolver</span>
+              <span className="home__cta-arrow" aria-hidden="true">→</span>
+            </a>
+          </div>
         </div>
 
-        <nav className="orbit" aria-label="Servicios">
+        <nav className="orbit" id="servicios" aria-label="Servicios">
           <svg className="orbit__lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
             <polyline points={OPCIONES.map((o) => `${parseFloat(o.x)},${parseFloat(o.y)}`).join(' ')} />
           </svg>

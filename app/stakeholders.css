@@ -555,3 +555,593 @@ h3 { font-size: clamp(1.35rem, 4vw, 2rem); letter-spacing: -.035em; }
     padding-top: calc(60px + env(safe-area-inset-top));
   }
 }
+
+/* ============================================================
+   ESTILOS PARA PÁGINA DE CONTABILIDAD (/contabilidad)
+   ============================================================ */
+.conta-page {
+  position: relative;
+  min-height: 100svh;
+  background: var(--void);
+  color: var(--white);
+  overflow-x: clip;
+}
+
+/* Barra superior */
+.conta-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px var(--pad);
+  background: rgba(0,0,0,.75);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.conta-brand {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .22em;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--white);
+}
+.conta-brand span {
+  color: var(--dim);
+}
+
+/* Hero Contabilidad */
+.conta-hero {
+  padding: calc(110px + env(safe-area-inset-top)) var(--pad) 70px;
+  max-width: var(--maxw);
+  margin: 0 auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.conta-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--blue-hi);
+  margin-bottom: 18px;
+  padding: 6px 14px;
+  background: rgba(59,110,255,.08);
+  border: 1px solid rgba(59,110,255,.2);
+  border-radius: 999px;
+}
+.conta-hero h1 {
+  font-size: clamp(2.4rem, 6.5vw, 4.4rem);
+  letter-spacing: -.045em;
+  line-height: 1.05;
+  max-width: 18ch;
+  margin: 0 auto;
+}
+.conta-hero h2 {
+  font-family: var(--body);
+  font-size: clamp(1.05rem, 2.3vw, 1.35rem);
+  line-height: 1.55;
+  color: var(--dim);
+  font-weight: 400;
+  letter-spacing: normal;
+  max-width: 62ch;
+  margin: 22px auto 0;
+}
+.conta-hero__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 36px;
+  flex-wrap: wrap;
+}
+.conta-trust-line {
+  margin-top: 24px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: var(--dimmer);
+  line-height: 1.6;
+  max-width: 58ch;
+}
+
+/* Botón flotante al hacer scroll */
+.conta-float-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 50;
+  box-shadow: 0 10px 35px -5px rgba(59,110,255,.6), 0 0 0 1px rgba(255,255,255,.1);
+  transform: translateY(120%);
+  opacity: 0;
+  transition: transform .35s var(--ease), opacity .35s var(--ease);
+  pointer-events: none;
+}
+.conta-float-btn.visible {
+  transform: translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Cinta de servicios */
+.conta-ribbon {
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+  overflow: hidden;
+  padding: 16px 0;
+  background: rgba(255,255,255,.015);
+}
+.conta-ribbon__track {
+  display: flex;
+  gap: 36px;
+  width: max-content;
+  animation: ribbon-scroll 32s linear infinite;
+}
+@keyframes ribbon-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.conta-ribbon span {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.conta-ribbon b {
+  color: var(--blue-hi);
+  font-weight: 700;
+  margin: 0 16px;
+}
+
+/* Secciones generales de Contabilidad */
+.conta-section {
+  padding: 90px var(--pad);
+  max-width: var(--maxw);
+  margin: 0 auto;
+}
+.conta-section__head {
+  max-width: 720px;
+  margin-bottom: 48px;
+}
+.conta-section__head h2 {
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.08;
+  letter-spacing: -.04em;
+}
+.conta-section__head p {
+  font-size: 1.05rem;
+  line-height: 1.55;
+  color: var(--dim);
+  margin-top: 14px;
+}
+
+/* 2.4 ¿Qué? — 4 Principios */
+.principles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-bottom: 40px;
+}
+.principle-card {
+  background: var(--elev);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  transition: border-color .25s, transform .25s;
+}
+.principle-card:hover {
+  border-color: rgba(59,110,255,.4);
+  transform: translateY(-3px);
+}
+.principle-card__num {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .2em;
+  color: var(--blue-hi);
+}
+.principle-card h3 {
+  font-size: 1.25rem;
+  letter-spacing: -.03em;
+}
+.principle-card p {
+  font-size: .92rem;
+  line-height: 1.55;
+  color: var(--dim);
+}
+
+/* 2.5 ¿Cómo? — Forma de trabajar */
+.timeline-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 44px;
+}
+.timeline-item {
+  background: var(--elev);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.timeline-item__step {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: rgba(59,110,255,.12);
+  border: 1px solid rgba(59,110,255,.3);
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue-hi);
+  flex-shrink: 0;
+}
+.timeline-item h4 {
+  font-family: var(--display);
+  font-size: 1.12rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  margin-bottom: 6px;
+}
+.timeline-item p {
+  font-size: .88rem;
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+/* Bloques adicionales de ¿Cómo? */
+.team-callout {
+  background: var(--elev);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 24px 28px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 24px;
+}
+.team-callout__icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.team-callout p {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--white);
+}
+
+.innovation-block {
+  background: linear-gradient(135deg, rgba(59,110,255,.16) 0%, rgba(10,10,12,1) 85%);
+  border: 1px solid rgba(59,110,255,.45);
+  border-radius: 22px;
+  padding: 32px 30px;
+  margin-bottom: 40px;
+  box-shadow: 0 10px 40px -10px rgba(59,110,255,.3);
+}
+.innovation-block__tag {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--blue-hi);
+  margin-bottom: 10px;
+  display: inline-block;
+}
+.innovation-block h3 {
+  font-size: 1.45rem;
+  margin-bottom: 10px;
+}
+.innovation-block p {
+  font-size: .95rem;
+  line-height: 1.6;
+  color: #D2D6DC;
+}
+.innovation-block em {
+  display: block;
+  margin-top: 10px;
+  font-style: normal;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--blue-hi);
+}
+
+/* 2.6 ¿Por qué? — Identificación y prueba */
+.quote-highlight {
+  margin: 20px 0 32px;
+  padding: 24px 0 28px;
+  border-left: 3px solid var(--blue);
+  padding-left: 24px;
+}
+.quote-highlight blockquote {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 4.4vw, 2.7rem);
+  line-height: 1.12;
+  letter-spacing: -.035em;
+  color: var(--white);
+}
+.why-story {
+  max-width: 68ch;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: var(--dim);
+  margin-bottom: 44px;
+}
+.counters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px;
+  margin-bottom: 40px;
+}
+.counter-box {
+  background: var(--elev);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 26px 20px;
+  text-align: center;
+}
+.counter-box__val {
+  font-family: var(--display);
+  font-size: clamp(2rem, 4.6vw, 2.9rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -.04em;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+.counter-box__lbl {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+/* 2.7 Precios */
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.plan-card {
+  background: var(--elev);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 30px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  transition: transform .25s, border-color .25s, box-shadow .25s;
+}
+.plan-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255,255,255,.3);
+  box-shadow: 0 14px 40px rgba(0,0,0,.5);
+}
+.plan-card--featured {
+  background: linear-gradient(175deg, rgba(59,110,255,.15) 0%, rgba(10,10,12,1) 60%);
+  border-color: rgba(59,110,255,.5);
+}
+.plan-card--featured:hover {
+  border-color: var(--blue-hi);
+  box-shadow: 0 16px 45px -8px rgba(59,110,255,.45);
+}
+.plan-card__header {
+  margin-bottom: 20px;
+}
+.plan-card__name {
+  font-family: var(--display);
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  margin-bottom: 4px;
+}
+.plan-card__ideal {
+  font-size: .84rem;
+  color: var(--dim);
+  line-height: 1.45;
+  min-height: 40px;
+}
+.plan-card__invoices {
+  margin: 18px 0;
+  padding: 10px 14px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--blue-hi);
+  letter-spacing: .06em;
+}
+.plan-card__price {
+  margin: 18px 0 24px;
+}
+.plan-card__amount {
+  font-family: var(--display);
+  font-size: 2.3rem;
+  font-weight: 800;
+  letter-spacing: -.05em;
+  color: var(--white);
+}
+.plan-card__period {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--dimmer);
+  letter-spacing: .05em;
+  margin-left: 6px;
+}
+.plan-features-list {
+  border-top: 1px solid var(--line-soft);
+  padding-top: 18px;
+  margin-bottom: 24px;
+  font-size: .83rem;
+  color: #B5B9C2;
+  line-height: 1.5;
+}
+.pricing-note {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: .06em;
+  color: var(--dim);
+  text-align: center;
+  margin-top: 14px;
+}
+
+/* 2.8 CTA final + Formulario */
+.diagnostic-section {
+  padding: 90px var(--pad) 100px;
+  max-width: 860px;
+  margin: 0 auto;
+}
+.diagnostic-box {
+  background: var(--elev);
+  border: 1px solid var(--line);
+  border-radius: 26px;
+  padding: clamp(26px, 6vw, 48px);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,.6);
+}
+.diagnostic-box::before {
+  content: "";
+  position: absolute;
+  top: -40%;
+  left: -20%;
+  right: -20%;
+  height: 60%;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(59,110,255,.25), rgba(0,0,0,0) 70%);
+  pointer-events: none;
+}
+.diagnostic-form {
+  display: grid;
+  gap: 20px;
+  margin-top: 32px;
+}
+.form-row-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+@media(min-width: 600px) {
+  .form-row-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.fld-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-bottom: 8px;
+}
+.fld-input, .fld-select {
+  width: 100%;
+  background: #000;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 16px;
+  color: var(--white);
+  font-family: var(--body);
+  font-size: .95rem;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  box-sizing: border-box;
+}
+.fld-input:focus, .fld-select:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(59,110,255,.18);
+}
+.modalidad-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.modalidad-btn {
+  background: #000;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  text-align: center;
+  cursor: pointer;
+  color: var(--dim);
+  font-family: var(--display);
+  font-size: .92rem;
+  font-weight: 600;
+  transition: all .2s var(--ease);
+}
+.modalidad-btn.active {
+  background: rgba(59,110,255,.16);
+  border-color: var(--blue);
+  color: var(--white);
+}
+.fld-note {
+  font-size: .78rem;
+  color: var(--dimmer);
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* 2.9 Footer Contabilidad */
+.conta-footer {
+  border-top: 1px solid var(--line-soft);
+  padding: 34px var(--pad) calc(36px + env(safe-area-inset-bottom));
+  max-width: var(--maxw);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: center;
+  text-align: center;
+}
+@media(min-width: 768px) {
+  .conta-footer {
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
+  }
+}
+.conta-footer__brand {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .2em;
+  color: var(--dimmer);
+}
+.conta-footer__links {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.conta-footer__links a:hover {
+  color: var(--white);
+}
+
