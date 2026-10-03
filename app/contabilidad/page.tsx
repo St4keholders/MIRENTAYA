@@ -5,90 +5,61 @@ import Link from 'next/link';
 import '@/app/stakeholders.css';
 import '@/app/servicios.css';
 
-interface PlanInfo {
-  name: string;
-  invoices: 'Hasta 30' | '31 a 100' | '101 a 500' | 'Más de 500';
-  price: string;
+interface Plan {
+  nombre: string;
+  facturas: 'Hasta 30' | '31 a 100' | '101 a 500' | 'Más de 500';
+  precio: string;
   ideal: string;
-  featured?: boolean;
 }
 
-const PLANS: PlanInfo[] = [
+const PLANES: Plan[] = [
   {
-    name: 'Arranque',
-    invoices: 'Hasta 30',
-    price: '$750.000',
+    nombre: 'Arranque',
+    facturas: 'Hasta 30',
+    precio: '$750.000',
     ideal: 'Empresas de servicios que están comenzando',
   },
   {
-    name: 'Crecimiento',
-    invoices: '31 a 100',
-    price: '$1.000.000',
+    nombre: 'Crecimiento',
+    facturas: '31 a 100',
+    precio: '$1.000.000',
     ideal: 'Manufactura o servicios frecuentes con ventas en crecimiento',
-    featured: true,
   },
   {
-    name: 'Consolidación',
-    invoices: '101 a 500',
-    price: '$1.500.000',
+    nombre: 'Consolidación',
+    facturas: '101 a 500',
+    precio: '$1.500.000',
     ideal: 'Empresas con operación estable y alto movimiento',
   },
   {
-    name: 'Escala',
-    invoices: 'Más de 500',
-    price: '$2.000.000',
+    nombre: 'Escala',
+    facturas: 'Más de 500',
+    precio: '$2.000.000',
     ideal: 'Operaciones de gran volumen + automatizaciones con IA y software a la medida',
   },
-];
-
-const TIME_SLOTS = [
-  '08:00 AM',
-  '09:00 AM',
-  '10:00 AM',
-  '11:00 AM',
-  '02:00 PM',
-  '03:00 PM',
-  '04:00 PM',
-  '05:00 PM',
 ];
 
 export default function ContabilidadPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Form State
+  // Formulario
   const [nombre, setNombre] = useState('');
   const [empresa, setEmpresa] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [correo, setCorreo] = useState('');
   const [facturas, setFacturas] = useState<'Hasta 30' | '31 a 100' | '101 a 500' | 'Más de 500'>('Hasta 30');
-  const [selectedPlan, setSelectedPlan] = useState<string>('Arranque');
-  const [modalidad, setModalidad] = useState<'virtual' | 'presencial'>('virtual');
+  const [modalidad, setModalidad] = useState<'Virtual (Google Meet)' | 'Presencial (Medellín)'>('Virtual (Google Meet)');
   const [direccion, setDireccion] = useState('');
-  const [fecha, setFecha] = useState('');
-  const [hora, setHora] = useState('09:00 AM');
+  const [fechaHora, setFechaHora] = useState('');
 
-  // Submission State
   const [submitting, setSubmitting] = useState(false);
+  const [enviado, setEnviado] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
 
-  // Floating CTA visibility
-  const [showFloatCta, setShowFloatCta] = useState(false);
+  // Botón flotante
+  const [showFloat, setShowFloat] = useState(false);
 
-  // Min date for booking: tomorrow
-  const [minDateStr, setMinDateStr] = useState('');
-
-  useEffect(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const yyyy = tomorrow.getFullYear();
-    const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
-    const dd = String(tomorrow.getDate()).padStart(2, '0');
-    setMinDateStr(`${yyyy}-${mm}-${dd}`);
-    setFecha(`${yyyy}-${mm}-${dd}`);
-  }, []);
-
-  // Stars canvas animation
+  // Animación de estrellas en canvas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -106,13 +77,13 @@ export default function ContabilidadPage() {
     };
     window.addEventListener('resize', handleResize);
 
-    const count = Math.min(80, Math.floor(width / 18));
+    const count = Math.min(70, Math.floor(width / 20));
     const stars = Array.from({ length: count }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      r: Math.random() * 1.3 + 0.3,
+      r: Math.random() * 1.2 + 0.3,
       alpha: Math.random() * 0.7 + 0.2,
-      dAlpha: (Math.random() * 0.01 + 0.004) * (Math.random() > 0.5 ? 1 : -1),
+      dAlpha: (Math.random() * 0.008 + 0.003) * (Math.random() > 0.5 ? 1 : -1),
     }));
 
     const render = () => {
@@ -135,58 +106,49 @@ export default function ContabilidadPage() {
     };
   }, []);
 
-  // Scroll listener for floating CTA
+  // Botón flotante al hacer scroll
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      if (scrollY > 400) {
-        setShowFloatCta(true);
-      } else {
-        setShowFloatCta(false);
-      }
+    const onScroll = () => {
+      setShowFloat(window.scrollY > 350);
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const scrollToDiagnostico = (planName?: string, planInvoices?: 'Hasta 30' | '31 a 100' | '101 a 500' | 'Más de 500') => {
-    if (planName) {
-      setSelectedPlan(planName);
+  const scrollToFormulario = (rangoFacturas?: 'Hasta 30' | '31 a 100' | '101 a 500' | 'Más de 500') => {
+    if (rangoFacturas) {
+      setFacturas(rangoFacturas);
     }
-    if (planInvoices) {
-      setFacturas(planInvoices);
-    }
-    const target = document.getElementById('diagnostico');
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const el = document.getElementById('formulario');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
   const scrollToPrecios = (e: React.MouseEvent) => {
     e.preventDefault();
-    const target = document.getElementById('precios');
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const el = document.getElementById('precios');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-    setSuccessMsg('');
 
     if (!nombre.trim() || !empresa.trim() || !whatsapp.trim() || !correo.trim()) {
-      setErrorMsg('Por favor completa todos los campos de contacto y empresa.');
+      setErrorMsg('Por favor completa todos los campos requeridos.');
       return;
     }
 
-    if (modalidad === 'presencial' && !direccion.trim()) {
-      setErrorMsg('La dirección de tu oficina en Medellín es obligatoria para la modalidad presencial.');
+    if (modalidad === 'Presencial (Medellín)' && !direccion.trim()) {
+      setErrorMsg('La dirección de tu oficina es obligatoria.');
       return;
     }
 
-    if (!fecha || !hora) {
-      setErrorMsg('Por favor selecciona una fecha y hora preferida para el diagnóstico.');
+    if (!fechaHora.trim()) {
+      setErrorMsg('Por favor indica tu fecha y hora preferida.');
       return;
     }
 
@@ -201,26 +163,21 @@ export default function ContabilidadPage() {
           whatsapp: whatsapp.trim(),
           correo: correo.trim(),
           facturas,
-          plan: selectedPlan,
-          modalidad,
-          direccion: modalidad === 'presencial' ? direccion.trim() : '',
-          fecha,
-          hora,
+          modalidad: modalidad === 'Presencial (Medellín)' ? 'presencial' : 'virtual',
+          direccion: modalidad === 'Presencial (Medellín)' ? direccion.trim() : '',
+          fecha: fechaHora,
+          hora: 'Preferida',
         }),
       });
 
-      const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error || 'Ocurrió un error al agendar tu diagnóstico.');
-      } else {
-        setSuccessMsg(
-          data.message ||
-            'Diagnóstico gratis agendado con éxito. Un contador de nuestro equipo se comunicará contigo para confirmar.'
-        );
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Error al procesar la solicitud.');
       }
-    } catch (err) {
-      console.error('Error enviando diagnóstico:', err);
-      setErrorMsg('Error de conexión. Por favor verifica tus datos e intenta nuevamente.');
+
+      setEnviado(true);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Error de conexión.');
     } finally {
       setSubmitting(false);
     }
@@ -228,42 +185,37 @@ export default function ContabilidadPage() {
 
   return (
     <div className="conta-page">
-      {/* Atmósfera de estrellas y velo radial */}
       <canvas ref={canvasRef} id="stars" />
       <div className="veil" aria-hidden="true" />
 
       {/* 2.1 BARRA SUPERIOR */}
       <header className="conta-nav">
-        <Link href="/" className="conta-brand">
-          STAKEHOLDERS <span>/</span> Contabilidad
-        </Link>
+        <div className="conta-brand">
+          STAKEHOLDERS / Contabilidad
+        </div>
         <button
           type="button"
           className="pill pill--blue"
-          onClick={() => scrollToDiagnostico()}
+          onClick={() => scrollToFormulario()}
         >
           Agenda tu diagnóstico
         </button>
       </header>
 
-      {/* BOTÓN FLOTANTE AL HACER SCROLL */}
-      <div className={`conta-float-btn ${showFloatCta ? 'visible' : ''}`}>
+      {/* BOTÓN FLOTANTE "AGENDAR DIAGNÓSTICO" */}
+      <div className={`conta-float-btn ${showFloat ? 'visible' : ''}`}>
         <button
           type="button"
           className="pill pill--blue"
-          onClick={() => scrollToDiagnostico()}
-          style={{ padding: '12px 22px', fontSize: '14px', fontWeight: 700 }}
+          onClick={() => scrollToFormulario()}
         >
-          Agendar diagnóstico gratis →
+          Agendar diagnóstico
         </button>
       </div>
 
       <main style={{ position: 'relative', zIndex: 2 }}>
         {/* 2.2 HERO */}
         <section className="conta-hero">
-          <div className="conta-hero__eyebrow">
-            <span>Diagnóstico gratis sin compromiso</span>
-          </div>
           <h1>Un equipo contable que no te deja solo</h1>
           <h2>
             Un contador y un auxiliar asignados a tu empresa llevan tus libros, presentan tus impuestos y se reúnen contigo cada semana para revisar cómo va tu negocio.
@@ -273,7 +225,7 @@ export default function ContabilidadPage() {
             <button
               type="button"
               className="pill pill--blue"
-              onClick={() => scrollToDiagnostico()}
+              onClick={() => scrollToFormulario()}
             >
               Agenda tu diagnóstico gratis
             </button>
@@ -325,7 +277,7 @@ export default function ContabilidadPage() {
         </div>
 
         {/* 2.4 ¿QUÉ? — SERVICIO Y PRINCIPIOS */}
-        <section className="conta-section" id="servicio">
+        <section className="conta-section" id="que">
           <div className="conta-section__head">
             <h2>Todo lo contable de tu empresa, en un solo equipo</h2>
             <p>
@@ -335,32 +287,28 @@ export default function ContabilidadPage() {
 
           <div className="principles-grid">
             <div className="principle-card">
-              <span className="principle-card__num">Principio 01</span>
-              <h3>Acompañamiento completo</h3>
+              <h3>Acompañamiento completo.</h3>
               <p>
                 No desaparecemos entre declaración y declaración. Nos reunimos contigo cada semana.
               </p>
             </div>
 
             <div className="principle-card">
-              <span className="principle-card__num">Principio 02</span>
-              <h3>Servicio personalizado</h3>
+              <h3>Servicio personalizado.</h3>
               <p>
                 Antes de proponerte nada, entendemos cómo funciona tu empresa. Tu sistema contable se diseña para ti, no se copia de otro cliente.
               </p>
             </div>
 
             <div className="principle-card">
-              <span className="principle-card__num">Principio 03</span>
-              <h3>Impuestos al día</h3>
+              <h3>Impuestos al día.</h3>
               <p>
                 Calendario tributario bajo control para que cada obligación se presente a tiempo y sin sanciones.
               </p>
             </div>
 
             <div className="principle-card">
-              <span className="principle-card__num">Principio 04</span>
-              <h3>Reducción de costos</h3>
+              <h3>Reducción de costos.</h3>
               <p>
                 Una estructura contable y tributaria bien planteada te ayuda a pagar lo justo, ni un peso de más.
               </p>
@@ -370,91 +318,90 @@ export default function ContabilidadPage() {
           <button
             type="button"
             className="pill pill--blue"
-            onClick={() => scrollToDiagnostico()}
+            onClick={() => scrollToFormulario()}
           >
             Quiero mi diagnóstico gratis
           </button>
         </section>
 
         {/* 2.5 ¿CÓMO? — FORMA DE TRABAJAR */}
-        <section className="conta-section" id="como-trabajamos" style={{ borderTop: '1px solid var(--line-soft)' }}>
+        <section className="conta-section" id="como" style={{ borderTop: '1px solid var(--line-soft)' }}>
           <div className="conta-section__head">
             <h2>Así trabajamos contigo, desde el primer día</h2>
           </div>
 
-          {/* Línea de tiempo de 6 pasos */}
           <div className="timeline-grid">
             <div className="timeline-item">
-              <div className="timeline-item__step">01</div>
+              <div className="timeline-item__step">1</div>
               <div>
-                <h4>Diagnóstico gratis</h4>
-                <p>Conocemos tu empresa, presencial en Medellín o por Google Meet.</p>
+                <p>
+                  <strong>Diagnóstico gratis.</strong> Conocemos tu empresa, presencial en Medellín o por Google Meet.
+                </p>
               </div>
             </div>
 
             <div className="timeline-item">
-              <div className="timeline-item__step">02</div>
+              <div className="timeline-item__step">2</div>
               <div>
-                <h4>Propuesta</h4>
-                <p>Te mostramos el plan y la estructura que tu empresa necesita.</p>
+                <p>
+                  <strong>Propuesta.</strong> Te mostramos el plan y la estructura que tu empresa necesita.
+                </p>
               </div>
             </div>
 
             <div className="timeline-item">
-              <div className="timeline-item__step">03</div>
+              <div className="timeline-item__step">3</div>
               <div>
-                <h4>Inicio de operación</h4>
-                <p>Aceptas y arrancamos. Tu información se organiza en Drive, siempre a tu alcance.</p>
+                <p>
+                  <strong>Inicio de operación.</strong> Aceptas y arrancamos. Tu información se organiza en Drive, siempre a tu alcance.
+                </p>
               </div>
             </div>
 
             <div className="timeline-item">
-              <div className="timeline-item__step">04</div>
+              <div className="timeline-item__step">4</div>
               <div>
-                <h4>Reunión semanal</h4>
-                <p>Revisamos contigo cómo va el negocio.</p>
+                <p>
+                  <strong>Reunión semanal.</strong> Revisamos contigo cómo va el negocio.
+                </p>
               </div>
             </div>
 
             <div className="timeline-item">
-              <div className="timeline-item__step">05</div>
+              <div className="timeline-item__step">5</div>
               <div>
-                <h4>Cierre mensual</h4>
-                <p>Libros cerrados y obligaciones presentadas.</p>
+                <p>
+                  <strong>Cierre mensual.</strong> Libros cerrados y obligaciones presentadas.
+                </p>
               </div>
             </div>
 
             <div className="timeline-item">
-              <div className="timeline-item__step">06</div>
+              <div className="timeline-item__step">6</div>
               <div>
-                <h4>Reporte</h4>
-                <p>Números claros para tomar decisiones.</p>
+                <p>
+                  <strong>Reporte.</strong> Números claros para tomar decisiones.
+                </p>
               </div>
             </div>
           </div>
 
-          {/* Bloque Tu equipo */}
           <div className="team-callout">
-            <div className="team-callout__icon">👥</div>
             <p>
               <strong>Tu equipo:</strong> Cada empresa tiene un contador y un auxiliar asignados. Siempre sabes con quién hablas.
             </p>
           </div>
 
-          {/* Bloque innovación */}
           <div className="innovation-block">
-            <span className="innovation-block__tag">Tecnología propia</span>
-            <h3>Contabilidad con tecnología propia</h3>
             <p>
-              Contamos con un área de tecnología que desarrolla automatizaciones con inteligencia artificial y software interno a la medida de tu empresa.
+              <strong>Contabilidad con tecnología propia.</strong> Contamos con un área de tecnología que desarrolla automatizaciones con inteligencia artificial y software interno a la medida de tu empresa. <em>(Incluido en el plan Escala.)</em>
             </p>
-            <em>(Incluido en el plan Escala.)</em>
           </div>
 
           <button
             type="button"
             className="pill pill--blue"
-            onClick={() => scrollToDiagnostico()}
+            onClick={() => scrollToFormulario()}
           >
             Agenda tu diagnóstico
           </button>
@@ -474,30 +421,26 @@ export default function ContabilidadPage() {
 
           <div className="counters-grid">
             <div className="counter-box">
-              <div className="counter-box__val">+10</div>
-              <div className="counter-box__lbl">Empresas activas</div>
+              <div className="counter-box__val">+10 empresas activas</div>
             </div>
 
             <div className="counter-box">
-              <div className="counter-box__val">+5</div>
-              <div className="counter-box__lbl">Años de experiencia profesional</div>
+              <div className="counter-box__val">+5 años de experiencia profesional</div>
             </div>
 
             <div className="counter-box">
-              <div className="counter-box__val">2</div>
-              <div className="counter-box__lbl">Años acompañando pymes</div>
+              <div className="counter-box__val">2 años acompañando pymes</div>
             </div>
 
             <div className="counter-box">
-              <div className="counter-box__val">Semanal</div>
-              <div className="counter-box__lbl">Reunión con cada cliente</div>
+              <div className="counter-box__val">Reunión semanal con cada cliente</div>
             </div>
           </div>
 
           <button
             type="button"
             className="pill pill--blue"
-            onClick={() => scrollToDiagnostico()}
+            onClick={() => scrollToFormulario()}
           >
             Empieza con un diagnóstico gratis
           </button>
@@ -513,45 +456,26 @@ export default function ContabilidadPage() {
           </div>
 
           <div className="pricing-grid">
-            {PLANS.map((p) => (
-              <div
-                key={p.name}
-                className={`plan-card ${p.featured ? 'plan-card--featured' : ''}`}
-              >
+            {PLANES.map((plan) => (
+              <div key={plan.nombre} className="plan-card">
                 <div>
-                  <div className="plan-card__header">
-                    <h3 className="plan-card__name">{p.name}</h3>
-                    <p className="plan-card__ideal">{p.ideal}</p>
-                  </div>
-
+                  <h3 className="plan-card__name">{plan.nombre}</h3>
                   <div className="plan-card__invoices">
-                    <span>Facturas de venta / mes: <strong>{p.invoices}</strong></span>
+                    Facturas de venta / mes: {plan.facturas}
                   </div>
-
                   <div className="plan-card__price">
-                    <span className="plan-card__amount">{p.price}</span>
-                    <span className="plan-card__period">COP / mes</span>
+                    <span className="plan-card__amount">{plan.precio}</span>
                   </div>
-
-                  <div className="plan-features-list">
-                    ✓ Contador y auxiliar asignados<br />
-                    ✓ Reunión semanal<br />
-                    ✓ Cierre mensual<br />
-                    ✓ Impuestos y estados financieros
-                    {p.name === 'Escala' && (
-                      <>
-                        <br />
-                        ✓ Automatizaciones con IA y software a medida
-                      </>
-                    )}
-                  </div>
+                  <p className="plan-card__ideal">
+                    {plan.ideal}
+                  </p>
                 </div>
 
                 <button
                   type="button"
-                  className={`pill ${p.featured ? 'pill--blue' : 'pill--ghost'}`}
-                  style={{ width: '100%', justifyContent: 'center' }}
-                  onClick={() => scrollToDiagnostico(p.name, p.invoices)}
+                  className="pill pill--ghost"
+                  style={{ width: '100%', justifyContent: 'center', marginTop: '20px' }}
+                  onClick={() => scrollToFormulario(plan.facturas)}
                 >
                   Agendar diagnóstico con este plan
                 </button>
@@ -559,215 +483,157 @@ export default function ContabilidadPage() {
             ))}
           </div>
 
+          <p style={{ marginTop: '28px', color: '#D0D4DC', fontSize: '1rem', lineHeight: 1.6 }}>
+            Todos los planes incluyen: contador y auxiliar asignados, reunión semanal, cierre mensual, impuestos y estados financieros.
+          </p>
+
           <p className="pricing-note">
             ¿No sabes cuál es el tuyo? En el diagnóstico lo definimos juntos.
           </p>
         </section>
 
         {/* 2.8 CTA FINAL + FORMULARIO */}
-        <section className="diagnostic-section" id="diagnostico">
+        <section className="diagnostic-section" id="formulario">
           <div className="diagnostic-box">
-            <h2 style={{ fontSize: 'clamp(2rem, 5vw, 2.8rem)', letterSpacing: '-.035em' }}>
-              Hablemos de tu empresa
-            </h2>
+            <h2>Hablemos de tu empresa</h2>
             <p style={{ color: 'var(--dim)', marginTop: '10px', fontSize: '1.05rem', lineHeight: 1.55 }}>
               El diagnóstico es gratis y sin compromiso. Elige si lo hacemos en tu oficina o por videollamada.
             </p>
 
-            {successMsg ? (
-              <div style={{ marginTop: '32px', textAlign: 'center', padding: '36px 20px' }}>
-                <div
-                  style={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: '50%',
-                    background: 'rgba(59,110,255,.15)',
-                    border: '1px solid var(--blue)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    fontSize: 28,
-                    color: 'var(--blue-hi)',
-                    margin: '0 auto 18px',
-                  }}
-                >
-                  ✓
-                </div>
-                <h3 style={{ fontSize: '1.6rem', marginBottom: '10px' }}>¡Diagnóstico Agendado!</h3>
-                <p style={{ color: '#D0D4DC', maxWidth: '48ch', margin: '0 auto', lineHeight: 1.6 }}>
-                  {successMsg}
+            {enviado ? (
+              <div style={{ marginTop: '30px', textAlign: 'center', padding: '30px 10px' }}>
+                <p style={{ fontSize: '1.2rem', color: 'var(--white)' }}>
+                  Solicitud enviada. Nos pondremos en contacto contigo.
                 </p>
-                <button
-                  type="button"
-                  className="pill pill--ghost"
-                  style={{ marginTop: '24px' }}
-                  onClick={() => setSuccessMsg('')}
-                >
-                  Agendar otra solicitud
-                </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="diagnostic-form">
-                <div className="form-row-2">
-                  <div>
-                    <label className="fld-label" htmlFor="nombre">
-                      Nombre completo *
-                    </label>
-                    <input
-                      id="nombre"
-                      type="text"
-                      className="fld-input"
-                      placeholder="Tu nombre y apellido"
-                      required
-                      value={nombre}
-                      onChange={(e) => setNombre(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="fld-label" htmlFor="empresa">
-                      Empresa *
-                    </label>
-                    <input
-                      id="empresa"
-                      type="text"
-                      className="fld-input"
-                      placeholder="Nombre de tu empresa o negocio"
-                      required
-                      value={empresa}
-                      onChange={(e) => setEmpresa(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row-2">
-                  <div>
-                    <label className="fld-label" htmlFor="whatsapp">
-                      WhatsApp / Celular *
-                    </label>
-                    <input
-                      id="whatsapp"
-                      type="tel"
-                      className="fld-input"
-                      placeholder="Ej. 300 123 4567"
-                      required
-                      value={whatsapp}
-                      onChange={(e) => setWhatsapp(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="fld-label" htmlFor="correo">
-                      Correo corporativo o personal *
-                    </label>
-                    <input
-                      id="correo"
-                      type="email"
-                      className="fld-input"
-                      placeholder="ejemplo@tuempresa.com"
-                      required
-                      value={correo}
-                      onChange={(e) => setCorreo(e.target.value)}
-                    />
-                  </div>
+                <div>
+                  <label className="fld-label" htmlFor="f-nombre">
+                    Nombre
+                  </label>
+                  <input
+                    id="f-nombre"
+                    type="text"
+                    className="fld-input"
+                    required
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                  />
                 </div>
 
                 <div>
-                  <label className="fld-label" htmlFor="facturas">
-                    Facturas de venta al mes (estimado) *
+                  <label className="fld-label" htmlFor="f-empresa">
+                    Empresa
+                  </label>
+                  <input
+                    id="f-empresa"
+                    type="text"
+                    className="fld-input"
+                    required
+                    value={empresa}
+                    onChange={(e) => setEmpresa(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="fld-label" htmlFor="f-whatsapp">
+                    WhatsApp
+                  </label>
+                  <input
+                    id="f-whatsapp"
+                    type="tel"
+                    className="fld-input"
+                    required
+                    value={whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="fld-label" htmlFor="f-correo">
+                    Correo
+                  </label>
+                  <input
+                    id="f-correo"
+                    type="email"
+                    className="fld-input"
+                    required
+                    value={correo}
+                    onChange={(e) => setCorreo(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="fld-label" htmlFor="f-facturas">
+                    Facturas de venta al mes
                   </label>
                   <select
-                    id="facturas"
+                    id="f-facturas"
                     className="fld-select"
                     value={facturas}
-                    onChange={(e) => {
-                      const val = e.target.value as any;
-                      setFacturas(val);
-                      const matchingPlan = PLANS.find((p) => p.invoices === val);
-                      if (matchingPlan) setSelectedPlan(matchingPlan.name);
-                    }}
+                    onChange={(e) => setFacturas(e.target.value as any)}
                   >
-                    <option value="Hasta 30">Hasta 30 facturas / mes (Plan Arranque)</option>
-                    <option value="31 a 100">31 a 100 facturas / mes (Plan Crecimiento)</option>
-                    <option value="101 a 500">101 a 500 facturas / mes (Plan Consolidación)</option>
-                    <option value="Más de 500">Más de 500 facturas / mes (Plan Escala)</option>
+                    <option value="Hasta 30">Hasta 30</option>
+                    <option value="31 a 100">31 a 100</option>
+                    <option value="101 a 500">101 a 500</option>
+                    <option value="Más de 500">Más de 500</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="fld-label">
-                    Modalidad de reunión *
+                    Modalidad
                   </label>
                   <div className="modalidad-group">
                     <button
                       type="button"
-                      className={`modalidad-btn ${modalidad === 'virtual' ? 'active' : ''}`}
-                      onClick={() => setModalidad('virtual')}
+                      className={`modalidad-btn ${modalidad === 'Virtual (Google Meet)' ? 'active' : ''}`}
+                      onClick={() => setModalidad('Virtual (Google Meet)')}
                     >
-                      💻 Virtual (Google Meet)
+                      Virtual (Google Meet)
                     </button>
                     <button
                       type="button"
-                      className={`modalidad-btn ${modalidad === 'presencial' ? 'active' : ''}`}
-                      onClick={() => setModalidad('presencial')}
+                      className={`modalidad-btn ${modalidad === 'Presencial (Medellín)' ? 'active' : ''}`}
+                      onClick={() => setModalidad('Presencial (Medellín)')}
                     >
-                      📍 Presencial (Medellín)
+                      Presencial (Medellín)
                     </button>
                   </div>
                 </div>
 
-                {modalidad === 'presencial' && (
+                {modalidad === 'Presencial (Medellín)' && (
                   <div>
-                    <label className="fld-label" htmlFor="direccion">
-                      Dirección de tu oficina en Medellín *
+                    <label className="fld-label" htmlFor="f-direccion">
+                      Dirección de tu oficina
                     </label>
                     <input
-                      id="direccion"
+                      id="f-direccion"
                       type="text"
                       className="fld-input"
-                      placeholder="Ej. Cra 43A # 1-50, El Poblado"
                       required
                       value={direccion}
                       onChange={(e) => setDireccion(e.target.value)}
                     />
                     <p className="fld-note">
-                      * Stakeholders no tiene sede propia; la reunión presencial es en la oficina del cliente.
+                      Stakeholders no tiene sede propia; la reunión presencial es en la oficina del cliente.
                     </p>
                   </div>
                 )}
 
-                <div className="form-row-2">
-                  <div>
-                    <label className="fld-label" htmlFor="fecha">
-                      Fecha preferida *
-                    </label>
-                    <input
-                      id="fecha"
-                      type="date"
-                      min={minDateStr}
-                      className="fld-input"
-                      required
-                      value={fecha}
-                      onChange={(e) => setFecha(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="fld-label" htmlFor="hora">
-                      Hora preferida *
-                    </label>
-                    <select
-                      id="hora"
-                      className="fld-select"
-                      value={hora}
-                      onChange={(e) => setHora(e.target.value)}
-                    >
-                      {TIME_SLOTS.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                <div>
+                  <label className="fld-label" htmlFor="f-fechahora">
+                    Fecha y hora preferida
+                  </label>
+                  <input
+                    id="f-fechahora"
+                    type="text"
+                    className="fld-input"
+                    required
+                    value={fechaHora}
+                    onChange={(e) => setFechaHora(e.target.value)}
+                  />
                 </div>
 
                 {errorMsg && (
@@ -786,10 +652,10 @@ export default function ContabilidadPage() {
                     padding: '14px',
                     fontSize: '15px',
                     fontWeight: 700,
-                    marginTop: '8px',
+                    marginTop: '10px',
                   }}
                 >
-                  {submitting ? 'Agendando tu diagnóstico...' : 'Agendar mi diagnóstico gratis'}
+                  Agendar mi diagnóstico gratis
                 </button>
               </form>
             )}
@@ -799,12 +665,11 @@ export default function ContabilidadPage() {
 
       {/* 2.9 FOOTER */}
       <footer className="conta-footer">
-        <div className="conta-footer__brand">
-          STAKEHOLDERS 2026 · Área Contable
-        </div>
-        <nav className="conta-footer__links">
+        <nav className="conta-footer__links" style={{ margin: '0 auto' }}>
           <Link href="/nomina">Nómina</Link>
+          <span>·</span>
           <Link href="/renta">Renta persona natural</Link>
+          <span>·</span>
           <Link href="/personalizado">Servicio personalizado</Link>
         </nav>
       </footer>
