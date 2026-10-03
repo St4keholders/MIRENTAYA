@@ -64,7 +64,7 @@ function RespuestaContent() {
         )}
 
         <a
-          href="/"
+          href="/renta"
           style={{
             display: 'inline-block', padding: '12px 28px', borderRadius: 12,
             background: 'rgba(61,107,255,0.2)', border: '1px solid rgba(61,107,255,0.5)',

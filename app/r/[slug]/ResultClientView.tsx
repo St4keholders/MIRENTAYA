@@ -431,7 +431,7 @@ export default function ResultClientView({ lead }: { lead: LeadData }) {
 
       {/* NAV */}
       <header className="nav stuck" style={{ zIndex: 60 }}>
-        <Link href="/" className="brand">STAKEHOLDERS<i /></Link>
+        <Link href="/renta" className="brand">STAKEHOLDERS<i /></Link>
         <button onClick={handleShare} style={{
           fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.18em', textTransform: 'uppercase' as const,
           color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.14)',

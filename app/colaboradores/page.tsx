@@ -544,13 +544,13 @@ export default function ColaboradoresPage() {
           borderBottom: '1px solid var(--line-soft)',
         }}
       >
-        <Link href="/" className="brand" style={{ fontFamily: 'var(--mono)', fontSize: 12, letterSpacing: '.28em', fontWeight: 600, color: '#fff' }}>
+        <Link href="/renta" className="brand" style={{ fontFamily: 'var(--mono)', fontSize: 12, letterSpacing: '.28em', fontWeight: 600, color: '#fff' }}>
           STAKEHOLDERS <i style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: '#3B6EFF', marginLeft: 6, verticalAlign: 'middle' }} />
         </Link>
         <div className="nav-links" style={{ display: 'flex', gap: 24, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--dim)' }}>
-          <Link href="/#funcionamiento" style={{ color: 'var(--dim)', transition: 'color .2s' }}>CÓMO FUNCIONA</Link>
+          <Link href="/renta#pasos" style={{ color: 'var(--dim)', transition: 'color .2s' }}>CÓMO FUNCIONA</Link>
           <Link href="/colaboradores" style={{ color: '#FFFFFF', fontWeight: 600 }}>PROPUESTA</Link>
-          <Link href="/#topes" style={{ color: 'var(--dim)', transition: 'color .2s' }}>TOPES</Link>
+          <Link href="/renta#topes" style={{ color: 'var(--dim)', transition: 'color .2s' }}>TOPES</Link>
         </div>
         <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <Link

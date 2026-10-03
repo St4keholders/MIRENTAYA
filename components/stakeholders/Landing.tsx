@@ -649,6 +649,16 @@ export default function Landing() {
         </nav>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <Link
+            href="/"
+            className="nav-back"
+            style={{
+              fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '.2em',
+              textTransform: 'uppercase', color: 'var(--dim)', padding: '7px 4px',
+            }}
+          >
+            ← Servicios
+          </Link>
+          <Link
             href="/admin/login"
             style={{
               fontFamily: 'var(--mono)', fontSize: 10, letterSpacing: '.2em',

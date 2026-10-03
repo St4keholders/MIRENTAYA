@@ -259,7 +259,7 @@ function TestContent() {
         borderBottom: '1px solid rgba(255,255,255,0.07)',
         backdropFilter: 'blur(12px)', background: 'rgba(0,0,0,0.4)',
       }}>
-        <Link href="/" style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 18, color: '#FFFFFF', letterSpacing: '.05em' }}>
+        <Link href="/renta" style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 18, color: '#FFFFFF', letterSpacing: '.05em' }}>
           STAKEHOLDERS<i style={{ display: 'inline-block', width: 5, height: 5, background: '#3D6BFF', borderRadius: '50%', marginLeft: 5, verticalAlign: 'middle' }} />
         </Link>
         <div style={{ fontFamily: 'var(--mono)', fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: '.08em' }}>

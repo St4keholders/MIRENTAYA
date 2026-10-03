@@ -27,9 +27,9 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Stakeholders · Descubre tu arquetipo tributario",
+  title: "Stakeholders · Contabilidad, nómina y renta",
   description:
-    "Responde el test, descubre tu arquetipo y averigua si este año te toca declarar renta. Consulta tu fecha límite con los dos últimos dígitos de tu cédula.",
+    "Contabilidad y nómina electrónica para empresas, declaración de renta para personas naturales y servicios tributarios a la medida en Colombia.",
 };
 
 export default function RootLayout({
