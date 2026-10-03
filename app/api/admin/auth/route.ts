@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createHash } from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import { crearToken, setSessionCookie } from '@/lib/erp/session';
 
 function hashPwd(pwd: string) {
   return createHash('sha256').update(pwd + 'stakeholders2026').digest('hex');
@@ -37,7 +38,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: data.error }, { status: 401 });
     }
 
-    return NextResponse.json({ success: true, user: data.user });
+    const res = NextResponse.json({ success: true, user: data.user });
+    // Sesión segura (cookie HttpOnly firmada) para el ERP
+    try {
+      const token = data.user ? crearToken(data.user) : null;
+      if (token) setSessionCookie(res, token);
+    } catch (e) {
+      console.error('[auth] No se pudo crear la sesión del ERP:', e);
+    }
+    return res;
   } catch (err) {
     console.error('[auth] Error:', err);
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });

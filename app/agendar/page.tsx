@@ -568,7 +568,7 @@ export default function AgendarPage() {
       }} />
 
       <header style={{ position: 'relative', zIndex: 10, marginBottom: 24, textAlign: 'center' }}>
-        <Link href="/" style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 20, color: '#FFFFFF', textDecoration: 'none', letterSpacing: '-.03em' }}>
+        <Link href="/renta" style={{ fontFamily: 'var(--display)', fontWeight: 800, fontSize: 20, color: '#FFFFFF', textDecoration: 'none', letterSpacing: '-.03em' }}>
           STAKEHOLDERS<span style={{ color: '#3D6BFF' }}>.</span>
         </Link>
       </header>

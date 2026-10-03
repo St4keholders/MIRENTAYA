@@ -1,5 +1,5 @@
-import Landing from '@/components/stakeholders/Landing';
+import Home from '@/components/stakeholders/Home';
 
 export default function HomePage() {
-  return <Landing />;
+  return <Home />;
 }
