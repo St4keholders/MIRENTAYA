@@ -2,8 +2,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import '@/app/stakeholders.css';
 import '@/app/servicios.css';
+
+/* Cosmo, el acompañante flotante: solo en el cliente para no afectar la carga inicial */
+const Cosmo = dynamic(() => import('@/components/stakeholders/cosmo/Cosmo'), { ssr: false });
 
 interface Plan {
   nombre: string;
@@ -176,6 +180,7 @@ export default function ContabilidadPage() {
       }
 
       setEnviado(true);
+      window.dispatchEvent(new CustomEvent('cosmo:celebrar'));
     } catch (err: any) {
       setErrorMsg(err.message || 'Error de conexión.');
     } finally {
@@ -186,6 +191,7 @@ export default function ContabilidadPage() {
   return (
     <div className="conta-page">
       <canvas ref={canvasRef} id="stars" />
+      <Cosmo />
       <div className="veil" aria-hidden="true" />
 
       {/* 2.1 BARRA SUPERIOR */}
