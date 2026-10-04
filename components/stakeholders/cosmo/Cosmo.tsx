@@ -209,6 +209,7 @@ export default function Cosmo() {
   }, []);
 
   /* ── Cambio de sección: salto por portal ── */
+  const irARef = useRef<(i: number, entrada?: boolean) => void>(() => {});
   const irA = useCallback(async (i: number, entrada = false) => {
     const s = st.current;
     if (s.warping) return;
@@ -274,8 +275,9 @@ export default function Cosmo() {
     decir(s.celebrado && i === ESCENAS.length - 1 ? FRASE_LISTO : e.frase);
 
     // si mientras saltaba cambió la sección, seguir
-    if (s.activa !== s.mostrada && s.activa >= 0) irA(s.activa);
+    if (s.activa !== s.mostrada && s.activa >= 0) irARef.current(s.activa);
   }, [objetivo, aplicarPos, estallar, pulsoPortal, decir, asomar]);
+  useEffect(() => { irARef.current = irA; }, [irA]);
 
   /* ── Bucle: sección activa, velocidad, inclinación, seguimiento ── */
   useEffect(() => {
