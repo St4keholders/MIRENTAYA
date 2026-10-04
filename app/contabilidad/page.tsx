@@ -2,12 +2,11 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import '@/app/stakeholders.css';
 import '@/app/servicios.css';
-
-/* Cosmo, el acompañante flotante: solo en el cliente para no afectar la carga inicial */
-const Cosmo = dynamic(() => import('@/components/stakeholders/cosmo/Cosmo'), { ssr: false });
+import '@/components/stakeholders/viaje/viaje.css';
+import { EscenaCaida } from '@/components/stakeholders/viaje/EscenaCaida';
+import { EscenaRuta, EscenaPorQue, Aterrizaje } from '@/components/stakeholders/viaje/Escenas';
 
 interface Plan {
   nombre: string;
@@ -110,6 +109,12 @@ export default function ContabilidadPage() {
     };
   }, []);
 
+  // Habilita los estados iniciales de las animaciones del viaje
+  useEffect(() => {
+    document.documentElement.classList.add('vj-js');
+    return () => document.documentElement.classList.remove('vj-js');
+  }, []);
+
   // Botón flotante al hacer scroll
   useEffect(() => {
     const onScroll = () => {
@@ -180,7 +185,6 @@ export default function ContabilidadPage() {
       }
 
       setEnviado(true);
-      window.dispatchEvent(new CustomEvent('cosmo:celebrar'));
     } catch (err: any) {
       setErrorMsg(err.message || 'Error de conexión.');
     } finally {
@@ -191,7 +195,6 @@ export default function ContabilidadPage() {
   return (
     <div className="conta-page">
       <canvas ref={canvasRef} id="stars" />
-      <Cosmo />
       <div className="veil" aria-hidden="true" />
 
       {/* 2.1 BARRA SUPERIOR */}
@@ -220,8 +223,8 @@ export default function ContabilidadPage() {
       </div>
 
       <main style={{ position: 'relative', zIndex: 2 }}>
-        {/* 2.2 HERO */}
-        <section className="conta-hero">
+        {/* 2.2 HERO · escenas 1 y 2: la caída y el rescate */}
+        <EscenaCaida>
           <h1>Un equipo contable que no te deja solo</h1>
           <h2>
             Un contador y un auxiliar asignados a tu empresa llevan tus libros, presentan tus impuestos y se reúnen contigo cada semana para revisar cómo va tu negocio.
@@ -247,7 +250,7 @@ export default function ContabilidadPage() {
           <p className="conta-trust-line">
             Contadores con tarjeta profesional · +10 empresas activas · Presencial en Medellín o virtual por Google Meet
           </p>
-        </section>
+        </EscenaCaida>
 
         {/* 2.3 CINTA DE SERVICIOS */}
         <div className="conta-ribbon" aria-hidden="true">
@@ -282,188 +285,253 @@ export default function ContabilidadPage() {
           </div>
         </div>
 
-        {/* 2.4 ¿QUÉ? — SERVICIO Y PRINCIPIOS */}
-        <section className="conta-section" id="que">
-          <div className="conta-section__head">
-            <h2>Todo lo contable de tu empresa, en un solo equipo</h2>
-            <p>
-              Nos encargamos de la teneduría de libros, la presentación de impuestos y tus estados financieros. Para trabajar así, tenemos cuatro principios que no negociamos.
-            </p>
-          </div>
-
-          <div className="principles-grid">
-            <div className="principle-card">
-              <h3>Acompañamiento completo.</h3>
+        {/* 2.4 ¿QUÉ? — SERVICIO Y PRINCIPIOS · escena 3: la nave visita 4 estrellas */}
+        <EscenaRuta
+          id="que"
+          etiqueta="Principios"
+          pose="senalando"
+          animos={['nervioso', 'atento']}
+          brazos={['agarrado', 'abajo']}
+          frase="Te llevo por los cuatro principios que no negociamos."
+          cabeza={
+            <div className="conta-section__head">
+              <h2>Todo lo contable de tu empresa, en un solo equipo</h2>
               <p>
-                No desaparecemos entre declaración y declaración. Nos reunimos contigo cada semana.
+                Nos encargamos de la teneduría de libros, la presentación de impuestos y tus estados financieros. Para trabajar así, tenemos cuatro principios que no negociamos.
               </p>
             </div>
+          }
+          items={[
+            {
+              key: 'p1', marca: 'estrella', tamano: 30,
+              contenido: (
+                <div className="principle-card">
+                  <h3>Acompañamiento completo.</h3>
+                  <p>
+                    No desaparecemos entre declaración y declaración. Nos reunimos contigo cada semana.
+                  </p>
+                </div>
+              ),
+            },
+            {
+              key: 'p2', marca: 'estrella', tamano: 30,
+              contenido: (
+                <div className="principle-card">
+                  <h3>Servicio personalizado.</h3>
+                  <p>
+                    Antes de proponerte nada, entendemos cómo funciona tu empresa. Tu sistema contable se diseña para ti, no se copia de otro cliente.
+                  </p>
+                </div>
+              ),
+            },
+            {
+              key: 'p3', marca: 'estrella', tamano: 30,
+              contenido: (
+                <div className="principle-card">
+                  <h3>Impuestos al día.</h3>
+                  <p>
+                    Calendario tributario bajo control para que cada obligación se presente a tiempo y sin sanciones.
+                  </p>
+                </div>
+              ),
+            },
+            {
+              key: 'p4', marca: 'estrella', tamano: 30,
+              contenido: (
+                <div className="principle-card">
+                  <h3>Reducción de costos.</h3>
+                  <p>
+                    Una estructura contable y tributaria bien planteada te ayuda a pagar lo justo, ni un peso de más.
+                  </p>
+                </div>
+              ),
+            },
+          ]}
+          pie={
+            <button
+              type="button"
+              className="pill pill--blue"
+              onClick={() => scrollToFormulario()}
+            >
+              Quiero mi diagnóstico gratis
+            </button>
+          }
+        />
 
-            <div className="principle-card">
-              <h3>Servicio personalizado.</h3>
+        {/* 2.5 ¿CÓMO? — FORMA DE TRABAJAR · escena 4: seis paradas en ruta */}
+        <EscenaRuta
+          id="como"
+          etiqueta="Pasos"
+          pose="portal"
+          animos={['atento', 'tranquilo']}
+          brazos={['abajo', 'abajo']}
+          frase="Seis paradas, y en todas voy contigo."
+          cabeza={
+            <div className="conta-section__head">
+              <h2>Así trabajamos contigo, desde el primer día</h2>
+            </div>
+          }
+          items={[
+            {
+              key: 's1', marca: 'planeta', tamano: 40, color: '#1B2A6B', etiqueta: '1',
+              contenido: (
+                <div className="timeline-item">
+                  <div className="timeline-item__step">1</div>
+                  <div>
+                    <p>
+                      <strong>Diagnóstico gratis.</strong> Conocemos tu empresa, presencial en Medellín o por Google Meet.
+                    </p>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 's2', marca: 'planeta', tamano: 40, color: '#2A3150', etiqueta: '2',
+              contenido: (
+                <div className="timeline-item">
+                  <div className="timeline-item__step">2</div>
+                  <div>
+                    <p>
+                      <strong>Propuesta.</strong> Te mostramos el plan y la estructura que tu empresa necesita.
+                    </p>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 's3', marca: 'planeta', tamano: 40, color: '#3B6EFF', etiqueta: '3',
+              contenido: (
+                <div className="timeline-item">
+                  <div className="timeline-item__step">3</div>
+                  <div>
+                    <p>
+                      <strong>Inicio de operación.</strong> Aceptas y arrancamos. Tu información se organiza en Drive, siempre a tu alcance.
+                    </p>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 's4', marca: 'planeta', tamano: 40, color: '#1B2A6B', etiqueta: '4',
+              contenido: (
+                <div className="timeline-item">
+                  <div className="timeline-item__step">4</div>
+                  <div>
+                    <p>
+                      <strong>Reunión semanal.</strong> Revisamos contigo cómo va el negocio.
+                    </p>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 's5', marca: 'planeta', tamano: 40, color: '#4C87FF', etiqueta: '5',
+              contenido: (
+                <div className="timeline-item">
+                  <div className="timeline-item__step">5</div>
+                  <div>
+                    <p>
+                      <strong>Cierre mensual.</strong> Libros cerrados y obligaciones presentadas.
+                    </p>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 's6', marca: 'planeta', tamano: 40, color: '#B88A1E', etiqueta: '6',
+              contenido: (
+                <div className="timeline-item">
+                  <div className="timeline-item__step">6</div>
+                  <div>
+                    <p>
+                      <strong>Reporte.</strong> Números claros para tomar decisiones.
+                    </p>
+                  </div>
+                </div>
+              ),
+            },
+            {
+              key: 'equipo', marca: 'faro', tamano: 30,
+              contenido: (
+                <div className="team-callout">
+                  <p>
+                    <strong>Tu equipo:</strong> Cada empresa tiene un contador y un auxiliar asignados. Siempre sabes con quién hablas.
+                  </p>
+                </div>
+              ),
+            },
+            {
+              key: 'tecnologia', marca: 'faro', tamano: 30,
+              contenido: (
+                <div className="innovation-block">
+                  <p>
+                    <strong>Contabilidad con tecnología propia.</strong> Contamos con un área de tecnología que desarrolla automatizaciones con inteligencia artificial y software interno a la medida de tu empresa. <em>(Incluido en el plan Escala.)</em>
+                  </p>
+                </div>
+              ),
+            },
+          ]}
+          pie={
+            <button
+              type="button"
+              className="pill pill--blue"
+              onClick={() => scrollToFormulario()}
+            >
+              Agenda tu diagnóstico
+            </button>
+          }
+        />
+
+        {/* 2.6 ¿POR QUÉ? — IDENTIFICACIÓN Y PRUEBA · escena 5: transmisión y tablero */}
+        <EscenaPorQue
+          frase="Primero entiendo tu empresa. Después, los números."
+          cita="“Un buen contador o te hace millonario o te quiebra.”"
+          historia={
+            <p className="why-story">
+              Muchas empresas llegan a nosotros con un sistema contable y tributario que nunca se pensó para ellas, porque nadie se tomó el tiempo de entender cómo funcionan. Ese error no se ve el primer mes, pero se paga con el tiempo. Por eso nosotros empezamos al revés: primero conocemos tu empresa, después planteamos los números.
+            </p>
+          }
+          cifras={[
+            '+10 empresas activas',
+            '+5 años de experiencia profesional',
+            '2 años acompañando pymes',
+            'Reunión semanal con cada cliente',
+          ]}
+          cta={
+            <button
+              type="button"
+              className="pill pill--blue"
+              onClick={() => scrollToFormulario()}
+            >
+              Empieza con un diagnóstico gratis
+            </button>
+          }
+        />
+
+        {/* 2.7 PRECIOS · escena 6: cuatro planetas según el tamaño de tu operación */}
+        <EscenaRuta
+          id="precios"
+          etiqueta="Planes"
+          pose="calculadora"
+          animos={['tranquilo', 'tranquilo']}
+          brazos={['abajo', 'abajo']}
+          frase="¿Cuántas facturas emites? Te llevo al planeta indicado."
+          grilla
+          cabeza={
+            <div className="conta-section__head">
+              <h2>Planes según el tamaño de tu operación</h2>
               <p>
-                Antes de proponerte nada, entendemos cómo funciona tu empresa. Tu sistema contable se diseña para ti, no se copia de otro cliente.
+                El plan depende de cuántas facturas de venta emites al mes, porque eso define el volumen de trabajo con la DIAN y en tus compras.
               </p>
             </div>
-
-            <div className="principle-card">
-              <h3>Impuestos al día.</h3>
-              <p>
-                Calendario tributario bajo control para que cada obligación se presente a tiempo y sin sanciones.
-              </p>
-            </div>
-
-            <div className="principle-card">
-              <h3>Reducción de costos.</h3>
-              <p>
-                Una estructura contable y tributaria bien planteada te ayuda a pagar lo justo, ni un peso de más.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="pill pill--blue"
-            onClick={() => scrollToFormulario()}
-          >
-            Quiero mi diagnóstico gratis
-          </button>
-        </section>
-
-        {/* 2.5 ¿CÓMO? — FORMA DE TRABAJAR */}
-        <section className="conta-section" id="como" style={{ borderTop: '1px solid var(--line-soft)' }}>
-          <div className="conta-section__head">
-            <h2>Así trabajamos contigo, desde el primer día</h2>
-          </div>
-
-          <div className="timeline-grid">
-            <div className="timeline-item">
-              <div className="timeline-item__step">1</div>
-              <div>
-                <p>
-                  <strong>Diagnóstico gratis.</strong> Conocemos tu empresa, presencial en Medellín o por Google Meet.
-                </p>
-              </div>
-            </div>
-
-            <div className="timeline-item">
-              <div className="timeline-item__step">2</div>
-              <div>
-                <p>
-                  <strong>Propuesta.</strong> Te mostramos el plan y la estructura que tu empresa necesita.
-                </p>
-              </div>
-            </div>
-
-            <div className="timeline-item">
-              <div className="timeline-item__step">3</div>
-              <div>
-                <p>
-                  <strong>Inicio de operación.</strong> Aceptas y arrancamos. Tu información se organiza en Drive, siempre a tu alcance.
-                </p>
-              </div>
-            </div>
-
-            <div className="timeline-item">
-              <div className="timeline-item__step">4</div>
-              <div>
-                <p>
-                  <strong>Reunión semanal.</strong> Revisamos contigo cómo va el negocio.
-                </p>
-              </div>
-            </div>
-
-            <div className="timeline-item">
-              <div className="timeline-item__step">5</div>
-              <div>
-                <p>
-                  <strong>Cierre mensual.</strong> Libros cerrados y obligaciones presentadas.
-                </p>
-              </div>
-            </div>
-
-            <div className="timeline-item">
-              <div className="timeline-item__step">6</div>
-              <div>
-                <p>
-                  <strong>Reporte.</strong> Números claros para tomar decisiones.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="team-callout">
-            <p>
-              <strong>Tu equipo:</strong> Cada empresa tiene un contador y un auxiliar asignados. Siempre sabes con quién hablas.
-            </p>
-          </div>
-
-          <div className="innovation-block">
-            <p>
-              <strong>Contabilidad con tecnología propia.</strong> Contamos con un área de tecnología que desarrolla automatizaciones con inteligencia artificial y software interno a la medida de tu empresa. <em>(Incluido en el plan Escala.)</em>
-            </p>
-          </div>
-
-          <button
-            type="button"
-            className="pill pill--blue"
-            onClick={() => scrollToFormulario()}
-          >
-            Agenda tu diagnóstico
-          </button>
-        </section>
-
-        {/* 2.6 ¿POR QUÉ? — IDENTIFICACIÓN Y PRUEBA */}
-        <section className="conta-section" id="por-que" style={{ borderTop: '1px solid var(--line-soft)' }}>
-          <div className="quote-highlight">
-            <blockquote>
-              &ldquo;Un buen contador o te hace millonario o te quiebra.&rdquo;
-            </blockquote>
-          </div>
-
-          <p className="why-story">
-            Muchas empresas llegan a nosotros con un sistema contable y tributario que nunca se pensó para ellas, porque nadie se tomó el tiempo de entender cómo funcionan. Ese error no se ve el primer mes, pero se paga con el tiempo. Por eso nosotros empezamos al revés: primero conocemos tu empresa, después planteamos los números.
-          </p>
-
-          <div className="counters-grid">
-            <div className="counter-box">
-              <div className="counter-box__val">+10 empresas activas</div>
-            </div>
-
-            <div className="counter-box">
-              <div className="counter-box__val">+5 años de experiencia profesional</div>
-            </div>
-
-            <div className="counter-box">
-              <div className="counter-box__val">2 años acompañando pymes</div>
-            </div>
-
-            <div className="counter-box">
-              <div className="counter-box__val">Reunión semanal con cada cliente</div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="pill pill--blue"
-            onClick={() => scrollToFormulario()}
-          >
-            Empieza con un diagnóstico gratis
-          </button>
-        </section>
-
-        {/* 2.7 PRECIOS */}
-        <section className="conta-section" id="precios" style={{ borderTop: '1px solid var(--line-soft)' }}>
-          <div className="conta-section__head">
-            <h2>Planes según el tamaño de tu operación</h2>
-            <p>
-              El plan depende de cuántas facturas de venta emites al mes, porque eso define el volumen de trabajo con la DIAN y en tus compras.
-            </p>
-          </div>
-
-          <div className="pricing-grid">
-            {PLANES.map((plan) => (
-              <div key={plan.nombre} className="plan-card">
+          }
+          items={PLANES.map((plan, i) => ({
+            key: plan.nombre,
+            marca: 'planeta' as const,
+            tamano: [30, 40, 52, 66][i],
+            color: ['#2A3150', '#1B2A6B', '#3B6EFF', '#B88A1E'][i],
+            contenido: (
+              <div className="plan-card">
                 <div>
                   <h3 className="plan-card__name">{plan.nombre}</h3>
                   <div className="plan-card__invoices">
@@ -486,20 +554,25 @@ export default function ContabilidadPage() {
                   Agendar diagnóstico con este plan
                 </button>
               </div>
-            ))}
-          </div>
+            ),
+          }))}
+          pie={
+            <>
+              <p style={{ color: '#D0D4DC', fontSize: '1rem', lineHeight: 1.6 }}>
+                Todos los planes incluyen: contador y auxiliar asignados, reunión semanal, cierre mensual, impuestos y estados financieros.
+              </p>
 
-          <p style={{ marginTop: '28px', color: '#D0D4DC', fontSize: '1rem', lineHeight: 1.6 }}>
-            Todos los planes incluyen: contador y auxiliar asignados, reunión semanal, cierre mensual, impuestos y estados financieros.
-          </p>
-
-          <p className="pricing-note">
-            ¿No sabes cuál es el tuyo? En el diagnóstico lo definimos juntos.
-          </p>
-        </section>
+              <p className="pricing-note">
+                ¿No sabes cuál es el tuyo? En el diagnóstico lo definimos juntos.
+              </p>
+            </>
+          }
+        />
 
         {/* 2.8 CTA FINAL + FORMULARIO */}
         <section className="diagnostic-section" id="formulario">
+          <div className="vj-form-grid">
+          <Aterrizaje celebrar={enviado} />
           <div className="diagnostic-box">
             <h2>Hablemos de tu empresa</h2>
             <p style={{ color: 'var(--dim)', marginTop: '10px', fontSize: '1.05rem', lineHeight: 1.55 }}>
@@ -665,6 +738,7 @@ export default function ContabilidadPage() {
                 </button>
               </form>
             )}
+          </div>
           </div>
         </section>
       </main>
