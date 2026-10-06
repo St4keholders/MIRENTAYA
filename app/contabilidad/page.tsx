@@ -4,9 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import '@/app/stakeholders.css';
 import '@/app/servicios.css';
+import '@/components/stakeholders/viaje/planeta.css';
 import '@/components/stakeholders/viaje/viaje.css';
-import { EscenaCaida } from '@/components/stakeholders/viaje/EscenaCaida';
-import { EscenaRuta, EscenaPorQue, Aterrizaje } from '@/components/stakeholders/viaje/Escenas';
+import { Viaje } from '@/components/stakeholders/viaje/Viaje';
+import { Orbita, Destello } from '@/components/stakeholders/viaje/Orbita';
+import { Aterrizaje } from '@/components/stakeholders/viaje/Aterrizaje';
+import { Planeta, type Variante } from '@/components/stakeholders/viaje/Planeta';
 
 interface Plan {
   nombre: string;
@@ -40,6 +43,23 @@ const PLANES: Plan[] = [
     precio: '$2.000.000',
     ideal: 'Operaciones de gran volumen + automatizaciones con IA y software a la medida',
   },
+];
+
+const CITA = '“Un buen contador o te hace millonario o te quiebra.”';
+
+const CIFRAS = [
+  '+10 empresas activas',
+  '+5 años de experiencia profesional',
+  '2 años acompañando pymes',
+  'Reunión semanal con cada cliente',
+];
+
+/* un planeta por plan: crece con el volumen de la operación */
+const ASTROS_PLAN: Array<{ v: Variante; anillo?: boolean; pl: string }> = [
+  { v: 'piedra', pl: 'clamp(44px, 4.4vw, 58px)' },
+  { v: 'hielo', pl: 'clamp(54px, 5.4vw, 72px)' },
+  { v: 'anillo', anillo: true, pl: 'clamp(64px, 6.4vw, 86px)' },
+  { v: 'oro', pl: 'clamp(76px, 7.6vw, 104px)' },
 ];
 
 export default function ContabilidadPage() {
@@ -107,12 +127,6 @@ export default function ContabilidadPage() {
       cancelAnimationFrame(animId);
       window.removeEventListener('resize', handleResize);
     };
-  }, []);
-
-  // Habilita los estados iniciales de las animaciones del viaje
-  useEffect(() => {
-    document.documentElement.classList.add('vj-js');
-    return () => document.documentElement.classList.remove('vj-js');
   }, []);
 
   // Botón flotante al hacer scroll
@@ -185,8 +199,8 @@ export default function ContabilidadPage() {
       }
 
       setEnviado(true);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error de conexión.');
+    } catch (err: unknown) {
+      setErrorMsg((err instanceof Error && err.message) || 'Error de conexión.');
     } finally {
       setSubmitting(false);
     }
@@ -222,355 +236,378 @@ export default function ContabilidadPage() {
         </button>
       </div>
 
+      <Viaje />
+
       <main style={{ position: 'relative', zIndex: 2 }}>
-        {/* 2.2 HERO · escenas 1 y 2: la caída y el rescate */}
-        <EscenaCaida>
-          <h1>Un equipo contable que no te deja solo</h1>
-          <h2>
-            Un contador y un auxiliar asignados a tu empresa llevan tus libros, presentan tus impuestos y se reúnen contigo cada semana para revisar cómo va tu negocio.
-          </h2>
+        {/* 2.2 HERO · estación 0: el planeta inmenso y el empresario cayendo a lo lejos */}
+        <section className="vj-est vj-hero" id="inicio" data-estacion="0">
+          <div className="vj-hero__copy">
+            <h1>Un equipo contable que no te deja solo</h1>
+            <h2>
+              Un contador y un auxiliar asignados a tu empresa llevan tus libros, presentan tus impuestos y se reúnen contigo cada semana para revisar cómo va tu negocio.
+            </h2>
 
-          <div className="conta-hero__actions">
-            <button
-              type="button"
-              className="pill pill--blue"
-              onClick={() => scrollToFormulario()}
-            >
-              Agenda tu diagnóstico gratis
-            </button>
-            <a
-              href="#precios"
-              onClick={scrollToPrecios}
-              className="pill pill--ghost"
-            >
-              Ver planes
-            </a>
-          </div>
-
-          <p className="conta-trust-line">
-            Contadores con tarjeta profesional · +10 empresas activas · Presencial en Medellín o virtual por Google Meet
-          </p>
-        </EscenaCaida>
-
-        {/* 2.3 CINTA DE SERVICIOS */}
-        <div className="conta-ribbon" aria-hidden="true">
-          <div className="conta-ribbon__track">
-            <span>Libros contables</span>
-            <b>·</b>
-            <span>IVA</span>
-            <b>·</b>
-            <span>Retención en la fuente</span>
-            <b>·</b>
-            <span>ICA</span>
-            <b>·</b>
-            <span>Información exógena</span>
-            <b>·</b>
-            <span>Estados financieros</span>
-            <b>·</b>
-            <span>NIIF para pymes</span>
-            <b>·</b>
-            <span>Libros contables</span>
-            <b>·</b>
-            <span>IVA</span>
-            <b>·</b>
-            <span>Retención en la fuente</span>
-            <b>·</b>
-            <span>ICA</span>
-            <b>·</b>
-            <span>Información exógena</span>
-            <b>·</b>
-            <span>Estados financieros</span>
-            <b>·</b>
-            <span>NIIF para pymes</span>
-          </div>
-        </div>
-
-        {/* 2.4 ¿QUÉ? — SERVICIO Y PRINCIPIOS · escena 3: la nave visita 4 estrellas */}
-        <EscenaRuta
-          id="que"
-          etiqueta="Principios"
-          pose="senalando"
-          animos={['nervioso', 'atento']}
-          brazos={['agarrado', 'abajo']}
-          frase="Te llevo por los cuatro principios que no negociamos."
-          cabeza={
-            <div className="conta-section__head">
-              <h2>Todo lo contable de tu empresa, en un solo equipo</h2>
-              <p>
-                Nos encargamos de la teneduría de libros, la presentación de impuestos y tus estados financieros. Para trabajar así, tenemos cuatro principios que no negociamos.
-              </p>
+            <div className="conta-hero__actions">
+              <button
+                type="button"
+                className="pill pill--blue vj-cta vj-cta--xl"
+                onClick={() => scrollToFormulario()}
+              >
+                <Destello />
+                Agenda tu diagnóstico gratis
+              </button>
+              <a
+                href="#precios"
+                onClick={scrollToPrecios}
+                className="pill pill--ghost vj-secundario"
+              >
+                Ver planes
+              </a>
             </div>
-          }
-          items={[
-            {
-              key: 'p1', marca: 'estrella', tamano: 30,
-              contenido: (
-                <div className="principle-card">
-                  <h3>Acompañamiento completo.</h3>
-                  <p>
-                    No desaparecemos entre declaración y declaración. Nos reunimos contigo cada semana.
-                  </p>
-                </div>
-              ),
-            },
-            {
-              key: 'p2', marca: 'estrella', tamano: 30,
-              contenido: (
-                <div className="principle-card">
-                  <h3>Servicio personalizado.</h3>
-                  <p>
-                    Antes de proponerte nada, entendemos cómo funciona tu empresa. Tu sistema contable se diseña para ti, no se copia de otro cliente.
-                  </p>
-                </div>
-              ),
-            },
-            {
-              key: 'p3', marca: 'estrella', tamano: 30,
-              contenido: (
-                <div className="principle-card">
-                  <h3>Impuestos al día.</h3>
-                  <p>
-                    Calendario tributario bajo control para que cada obligación se presente a tiempo y sin sanciones.
-                  </p>
-                </div>
-              ),
-            },
-            {
-              key: 'p4', marca: 'estrella', tamano: 30,
-              contenido: (
-                <div className="principle-card">
-                  <h3>Reducción de costos.</h3>
-                  <p>
-                    Una estructura contable y tributaria bien planteada te ayuda a pagar lo justo, ni un peso de más.
-                  </p>
-                </div>
-              ),
-            },
-          ]}
-          pie={
-            <button
-              type="button"
-              className="pill pill--blue"
-              onClick={() => scrollToFormulario()}
-            >
-              Quiero mi diagnóstico gratis
-            </button>
-          }
-        />
 
-        {/* 2.5 ¿CÓMO? — FORMA DE TRABAJAR · escena 4: seis paradas en ruta */}
-        <EscenaRuta
-          id="como"
-          etiqueta="Pasos"
-          pose="portal"
-          animos={['atento', 'tranquilo']}
-          brazos={['abajo', 'abajo']}
-          frase="Seis paradas, y en todas voy contigo."
-          cabeza={
-            <div className="conta-section__head">
-              <h2>Así trabajamos contigo, desde el primer día</h2>
-            </div>
-          }
-          items={[
-            {
-              key: 's1', marca: 'planeta', tamano: 40, color: '#1B2A6B', etiqueta: '1',
-              contenido: (
-                <div className="timeline-item">
-                  <div className="timeline-item__step">1</div>
-                  <div>
-                    <p>
-                      <strong>Diagnóstico gratis.</strong> Conocemos tu empresa, presencial en Medellín o por Google Meet.
-                    </p>
-                  </div>
-                </div>
-              ),
-            },
-            {
-              key: 's2', marca: 'planeta', tamano: 40, color: '#2A3150', etiqueta: '2',
-              contenido: (
-                <div className="timeline-item">
-                  <div className="timeline-item__step">2</div>
-                  <div>
-                    <p>
-                      <strong>Propuesta.</strong> Te mostramos el plan y la estructura que tu empresa necesita.
-                    </p>
-                  </div>
-                </div>
-              ),
-            },
-            {
-              key: 's3', marca: 'planeta', tamano: 40, color: '#3B6EFF', etiqueta: '3',
-              contenido: (
-                <div className="timeline-item">
-                  <div className="timeline-item__step">3</div>
-                  <div>
-                    <p>
-                      <strong>Inicio de operación.</strong> Aceptas y arrancamos. Tu información se organiza en Drive, siempre a tu alcance.
-                    </p>
-                  </div>
-                </div>
-              ),
-            },
-            {
-              key: 's4', marca: 'planeta', tamano: 40, color: '#1B2A6B', etiqueta: '4',
-              contenido: (
-                <div className="timeline-item">
-                  <div className="timeline-item__step">4</div>
-                  <div>
-                    <p>
-                      <strong>Reunión semanal.</strong> Revisamos contigo cómo va el negocio.
-                    </p>
-                  </div>
-                </div>
-              ),
-            },
-            {
-              key: 's5', marca: 'planeta', tamano: 40, color: '#4C87FF', etiqueta: '5',
-              contenido: (
-                <div className="timeline-item">
-                  <div className="timeline-item__step">5</div>
-                  <div>
-                    <p>
-                      <strong>Cierre mensual.</strong> Libros cerrados y obligaciones presentadas.
-                    </p>
-                  </div>
-                </div>
-              ),
-            },
-            {
-              key: 's6', marca: 'planeta', tamano: 40, color: '#B88A1E', etiqueta: '6',
-              contenido: (
-                <div className="timeline-item">
-                  <div className="timeline-item__step">6</div>
-                  <div>
-                    <p>
-                      <strong>Reporte.</strong> Números claros para tomar decisiones.
-                    </p>
-                  </div>
-                </div>
-              ),
-            },
-            {
-              key: 'equipo', marca: 'faro', tamano: 30,
-              contenido: (
-                <div className="team-callout">
-                  <p>
-                    <strong>Tu equipo:</strong> Cada empresa tiene un contador y un auxiliar asignados. Siempre sabes con quién hablas.
-                  </p>
-                </div>
-              ),
-            },
-            {
-              key: 'tecnologia', marca: 'faro', tamano: 30,
-              contenido: (
-                <div className="innovation-block">
-                  <p>
-                    <strong>Contabilidad con tecnología propia.</strong> Contamos con un área de tecnología que desarrolla automatizaciones con inteligencia artificial y software interno a la medida de tu empresa. <em>(Incluido en el plan Escala.)</em>
-                  </p>
-                </div>
-              ),
-            },
-          ]}
-          pie={
-            <button
-              type="button"
-              className="pill pill--blue"
-              onClick={() => scrollToFormulario()}
-            >
-              Agenda tu diagnóstico
-            </button>
-          }
-        />
-
-        {/* 2.6 ¿POR QUÉ? — IDENTIFICACIÓN Y PRUEBA · escena 5: transmisión y tablero */}
-        <EscenaPorQue
-          frase="Primero entiendo tu empresa. Después, los números."
-          cita="“Un buen contador o te hace millonario o te quiebra.”"
-          historia={
-            <p className="why-story">
-              Muchas empresas llegan a nosotros con un sistema contable y tributario que nunca se pensó para ellas, porque nadie se tomó el tiempo de entender cómo funcionan. Ese error no se ve el primer mes, pero se paga con el tiempo. Por eso nosotros empezamos al revés: primero conocemos tu empresa, después planteamos los números.
+            <p className="conta-trust-line">
+              Contadores con tarjeta profesional · +10 empresas activas · Presencial en Medellín o virtual por Google Meet
             </p>
-          }
-          cifras={[
-            '+10 empresas activas',
-            '+5 años de experiencia profesional',
-            '2 años acompañando pymes',
-            'Reunión semanal con cada cliente',
-          ]}
-          cta={
-            <button
-              type="button"
-              className="pill pill--blue"
-              onClick={() => scrollToFormulario()}
-            >
-              Empieza con un diagnóstico gratis
-            </button>
-          }
-        />
+          </div>
+        </section>
 
-        {/* 2.7 PRECIOS · escena 6: cuatro planetas según el tamaño de tu operación */}
-        <EscenaRuta
-          id="precios"
-          etiqueta="Planes"
-          pose="calculadora"
-          animos={['tranquilo', 'tranquilo']}
-          brazos={['abajo', 'abajo']}
-          frase="¿Cuántas facturas emites? Te llevo al planeta indicado."
-          grilla
-          cabeza={
-            <div className="conta-section__head">
-              <h2>Planes según el tamaño de tu operación</h2>
-              <p>
-                El plan depende de cuántas facturas de venta emites al mes, porque eso define el volumen de trabajo con la DIAN y en tus compras.
-              </p>
+        {/* estación 1: zoom al empresario y rescate de Cosmo · 2.3 CINTA DE SERVICIOS */}
+        <section className="vj-est vj-rescate" id="rescate" data-estacion="1">
+          <div className="conta-ribbon" aria-hidden="true">
+            <div className="conta-ribbon__track">
+              <span>Libros contables</span>
+              <b>·</b>
+              <span>IVA</span>
+              <b>·</b>
+              <span>Retención en la fuente</span>
+              <b>·</b>
+              <span>ICA</span>
+              <b>·</b>
+              <span>Información exógena</span>
+              <b>·</b>
+              <span>Estados financieros</span>
+              <b>·</b>
+              <span>NIIF para pymes</span>
+              <b>·</b>
+              <span>Libros contables</span>
+              <b>·</b>
+              <span>IVA</span>
+              <b>·</b>
+              <span>Retención en la fuente</span>
+              <b>·</b>
+              <span>ICA</span>
+              <b>·</b>
+              <span>Información exógena</span>
+              <b>·</b>
+              <span>Estados financieros</span>
+              <b>·</b>
+              <span>NIIF para pymes</span>
             </div>
-          }
-          items={PLANES.map((plan, i) => ({
-            key: plan.nombre,
-            marca: 'planeta' as const,
-            tamano: [30, 40, 52, 66][i],
-            color: ['#2A3150', '#1B2A6B', '#3B6EFF', '#B88A1E'][i],
-            contenido: (
-              <div className="plan-card">
-                <div>
-                  <h3 className="plan-card__name">{plan.nombre}</h3>
-                  <div className="plan-card__invoices">
-                    Facturas de venta / mes: {plan.facturas}
-                  </div>
-                  <div className="plan-card__price">
-                    <span className="plan-card__amount">{plan.precio}</span>
-                  </div>
-                  <p className="plan-card__ideal">
-                    {plan.ideal}
-                  </p>
-                </div>
+          </div>
+        </section>
 
-                <button
-                  type="button"
-                  className="pill pill--ghost"
-                  style={{ width: '100%', justifyContent: 'center', marginTop: '20px' }}
-                  onClick={() => scrollToFormulario(plan.facturas)}
-                >
-                  Agendar diagnóstico con este plan
-                </button>
+        {/* 2.4 ¿QUÉ? — SERVICIO Y PRINCIPIOS · estación 2: cuatro principios en órbita */}
+        <section className="vj-est vj-que" id="que" data-estacion="2">
+          <div className="vj-est__in vj-dos">
+            <div className="vj-dos__texto">
+              <div className="conta-section__head">
+                <h2>Todo lo contable de tu empresa, en un solo equipo</h2>
+                <p>
+                  Nos encargamos de la teneduría de libros, la presentación de impuestos y tus estados financieros. Para trabajar así, tenemos cuatro principios que no negociamos.
+                </p>
               </div>
-            ),
-          }))}
-          pie={
-            <>
-              <p style={{ color: '#D0D4DC', fontSize: '1rem', lineHeight: 1.6 }}>
+              <button
+                type="button"
+                className="pill pill--blue vj-cta"
+                onClick={() => scrollToFormulario()}
+              >
+                <Destello />
+                Quiero mi diagnóstico gratis
+              </button>
+            </div>
+
+            <Orbita
+              planeta={<Planeta v="anillo" anillo giro={50} inclinacion={-16} />}
+              items={[
+                {
+                  key: 'p1',
+                  contenido: (
+                    <div className="principle-card">
+                      <h3>Acompañamiento completo.</h3>
+                      <p>
+                        No desaparecemos entre declaración y declaración. Nos reunimos contigo cada semana.
+                      </p>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'p2',
+                  contenido: (
+                    <div className="principle-card">
+                      <h3>Servicio personalizado.</h3>
+                      <p>
+                        Antes de proponerte nada, entendemos cómo funciona tu empresa. Tu sistema contable se diseña para ti, no se copia de otro cliente.
+                      </p>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'p3',
+                  contenido: (
+                    <div className="principle-card">
+                      <h3>Impuestos al día.</h3>
+                      <p>
+                        Calendario tributario bajo control para que cada obligación se presente a tiempo y sin sanciones.
+                      </p>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'p4',
+                  contenido: (
+                    <div className="principle-card">
+                      <h3>Reducción de costos.</h3>
+                      <p>
+                        Una estructura contable y tributaria bien planteada te ayuda a pagar lo justo, ni un peso de más.
+                      </p>
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </div>
+        </section>
+
+        {/* 2.5 ¿CÓMO? — FORMA DE TRABAJAR · estación 3: seis paradas alrededor de su planeta */}
+        <section className="vj-est vj-como" id="como" data-estacion="3">
+          <div className="vj-est__in vj-dos vj-dos--inv">
+            <div className="vj-dos__texto">
+              <div className="conta-section__head">
+                <h2>Así trabajamos contigo, desde el primer día</h2>
+              </div>
+              <div className="team-callout">
+                <p>
+                  <strong>Tu equipo:</strong> Cada empresa tiene un contador y un auxiliar asignados. Siempre sabes con quién hablas.
+                </p>
+              </div>
+              <div className="innovation-block">
+                <p>
+                  <strong>Contabilidad con tecnología propia.</strong> Contamos con un área de tecnología que desarrolla automatizaciones con inteligencia artificial y software interno a la medida de tu empresa. <em>(Incluido en el plan Escala.)</em>
+                </p>
+              </div>
+              <button
+                type="button"
+                className="pill pill--blue vj-cta"
+                onClick={() => scrollToFormulario()}
+              >
+                <Destello />
+                Agenda tu diagnóstico
+              </button>
+            </div>
+
+            <Orbita
+              className="vj-orb--pasos"
+              planeta={<Planeta v="hielo" giro={70} inclinacion={-8} />}
+              items={[
+                {
+                  key: 's1',
+                  contenido: (
+                    <div className="timeline-item">
+                      <div className="timeline-item__step">1</div>
+                      <div>
+                        <p>
+                          <strong>Diagnóstico gratis.</strong> Conocemos tu empresa, presencial en Medellín o por Google Meet.
+                        </p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: 's2',
+                  contenido: (
+                    <div className="timeline-item">
+                      <div className="timeline-item__step">2</div>
+                      <div>
+                        <p>
+                          <strong>Propuesta.</strong> Te mostramos el plan y la estructura que tu empresa necesita.
+                        </p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: 's3',
+                  contenido: (
+                    <div className="timeline-item">
+                      <div className="timeline-item__step">3</div>
+                      <div>
+                        <p>
+                          <strong>Inicio de operación.</strong> Aceptas y arrancamos. Tu información se organiza en Drive, siempre a tu alcance.
+                        </p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: 's4',
+                  contenido: (
+                    <div className="timeline-item">
+                      <div className="timeline-item__step">4</div>
+                      <div>
+                        <p>
+                          <strong>Reunión semanal.</strong> Revisamos contigo cómo va el negocio.
+                        </p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: 's5',
+                  contenido: (
+                    <div className="timeline-item">
+                      <div className="timeline-item__step">5</div>
+                      <div>
+                        <p>
+                          <strong>Cierre mensual.</strong> Libros cerrados y obligaciones presentadas.
+                        </p>
+                      </div>
+                    </div>
+                  ),
+                },
+                {
+                  key: 's6',
+                  contenido: (
+                    <div className="timeline-item">
+                      <div className="timeline-item__step">6</div>
+                      <div>
+                        <p>
+                          <strong>Reporte.</strong> Números claros para tomar decisiones.
+                        </p>
+                      </div>
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </div>
+        </section>
+
+        {/* 2.6 ¿POR QUÉ? — IDENTIFICACIÓN Y PRUEBA · estación 4: transmisión desde el planeta y tablero */}
+        <section className="vj-est vj-porque" id="por-que" data-estacion="4">
+          <div className="vj-est__in vj-dos">
+            <div className="vj-dos__texto">
+              <div className="quote-highlight">
+                <blockquote className="vj-cita" aria-label={CITA}>
+                  {Array.from(CITA).map((c, i) => (
+                    <span key={i} aria-hidden="true" style={{ ['--i' as string]: i }}>{c}</span>
+                  ))}
+                </blockquote>
+              </div>
+              <p className="why-story">
+                Muchas empresas llegan a nosotros con un sistema contable y tributario que nunca se pensó para ellas, porque nadie se tomó el tiempo de entender cómo funcionan. Ese error no se ve el primer mes, pero se paga con el tiempo. Por eso nosotros empezamos al revés: primero conocemos tu empresa, después planteamos los números.
+              </p>
+              <div className="counters-grid vj-tablero">
+                {CIFRAS.map((txt, i) => {
+                  const m = txt.match(/^(\+?)(\d+)(.*)$/);
+                  return (
+                    <div key={txt} className="counter-box vj-cifra" style={{ ['--i' as string]: i }}>
+                      <div className="counter-box__val">
+                        {m ? (<>{m[1]}<span className="vj-num" data-to={m[2]}>{m[2]}</span>{m[3]}</>) : txt}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                className="pill pill--blue vj-cta"
+                onClick={() => scrollToFormulario()}
+              >
+                <Destello />
+                Empieza con un diagnóstico gratis
+              </button>
+            </div>
+
+            <div className="vj-porque__astro" aria-hidden="true">
+              <div className="vj-porque__planeta">
+                <Planeta v="nebula" giro={90} inclinacion={-20} />
+              </div>
+              <svg className="vj-holo" viewBox="0 0 200 300" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="vj-holo-g" x1="1" x2="0">
+                    <stop offset="0" stopColor="#4C87FF" stopOpacity=".5" />
+                    <stop offset="1" stopColor="#4C87FF" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <polygon points="200,140 0,0 0,300 200,160" fill="url(#vj-holo-g)" />
+              </svg>
+              <div className="vj-ancla" data-ancla-nave="arriba" data-ancla-movil="der" />
+            </div>
+          </div>
+        </section>
+
+        {/* 2.7 PRECIOS · estación 5: un planeta por plan, según el tamaño de tu operación */}
+        <section className="vj-est vj-precios" id="precios" data-estacion="5">
+          <div className="vj-est__in">
+            <div className="vj-precios__cab">
+              <div className="conta-section__head">
+                <h2>Planes según el tamaño de tu operación</h2>
+                <p>
+                  El plan depende de cuántas facturas de venta emites al mes, porque eso define el volumen de trabajo con la DIAN y en tus compras.
+                </p>
+              </div>
+              <div className="vj-ancla" data-ancla-nave="izq" data-ancla-movil="izq" />
+            </div>
+
+            <div className="vj-planes">
+              <svg className="vj-planes__orbita" viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M0,14 Q50,2 100,14" />
+              </svg>
+              {PLANES.map((plan, i) => (
+                <div key={plan.nombre} className="vj-plan" style={{ ['--i' as string]: i }}>
+                  <div className="vj-plan__astro" aria-hidden="true">
+                    <Planeta v={ASTROS_PLAN[i].v} anillo={ASTROS_PLAN[i].anillo} giro={40 + i * 12} style={{ ['--pl' as string]: ASTROS_PLAN[i].pl }} />
+                  </div>
+                  <div className="plan-card">
+                    <div>
+                      <h3 className="plan-card__name">{plan.nombre}</h3>
+                      <div className="plan-card__invoices">
+                        Facturas de venta / mes: {plan.facturas}
+                      </div>
+                      <div className="plan-card__price">
+                        <span className="plan-card__amount">{plan.precio}</span>
+                      </div>
+                      <p className="plan-card__ideal">
+                        {plan.ideal}
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="pill pill--blue vj-cta vj-cta--plan"
+                      onClick={() => scrollToFormulario(plan.facturas)}
+                    >
+                      Agendar diagnóstico con este plan
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="vj-precios__pie">
+              <p>
                 Todos los planes incluyen: contador y auxiliar asignados, reunión semanal, cierre mensual, impuestos y estados financieros.
               </p>
 
               <p className="pricing-note">
                 ¿No sabes cuál es el tuyo? En el diagnóstico lo definimos juntos.
               </p>
-            </>
-          }
-        />
+            </div>
+          </div>
+        </section>
 
-        {/* 2.8 CTA FINAL + FORMULARIO */}
-        <section className="diagnostic-section" id="formulario">
+        {/* 2.8 CTA FINAL + FORMULARIO · estación 6: aterrizaje */}
+        <section className="vj-est diagnostic-section vj-form" id="formulario" data-estacion="6">
           <div className="vj-form-grid">
           <Aterrizaje celebrar={enviado} />
           <div className="diagnostic-box">
@@ -651,7 +688,7 @@ export default function ContabilidadPage() {
                     id="f-facturas"
                     className="fld-select"
                     value={facturas}
-                    onChange={(e) => setFacturas(e.target.value as any)}
+                    onChange={(e) => setFacturas(e.target.value as typeof facturas)}
                   >
                     <option value="Hasta 30">Hasta 30</option>
                     <option value="31 a 100">31 a 100</option>
@@ -724,7 +761,7 @@ export default function ContabilidadPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="pill pill--blue"
+                  className="pill pill--blue vj-cta"
                   style={{
                     width: '100%',
                     justifyContent: 'center',
@@ -734,25 +771,26 @@ export default function ContabilidadPage() {
                     marginTop: '10px',
                   }}
                 >
+                  <Destello />
                   Agendar mi diagnóstico gratis
                 </button>
               </form>
             )}
           </div>
           </div>
+
+          {/* 2.9 FOOTER */}
+          <footer className="conta-footer">
+            <nav className="conta-footer__links" style={{ margin: '0 auto' }}>
+              <Link href="/nomina">Nómina</Link>
+              <span>·</span>
+              <Link href="/renta">Renta persona natural</Link>
+              <span>·</span>
+              <Link href="/personalizado">Servicio personalizado</Link>
+            </nav>
+          </footer>
         </section>
       </main>
-
-      {/* 2.9 FOOTER */}
-      <footer className="conta-footer">
-        <nav className="conta-footer__links" style={{ margin: '0 auto' }}>
-          <Link href="/nomina">Nómina</Link>
-          <span>·</span>
-          <Link href="/renta">Renta persona natural</Link>
-          <span>·</span>
-          <Link href="/personalizado">Servicio personalizado</Link>
-        </nav>
-      </footer>
     </div>
   );
 }
