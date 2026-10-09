@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { erpDb } from '@/lib/erp/db';
+
+const TRABAJADORES = ['1 a 5', '6 a 20', '21 a 50', 'Más de 50'];
+const MOTIVOS = ['Adquirir el servicio', 'Hablar con un contador'];
 
 export async function POST(request: Request) {
   try {
@@ -15,7 +19,12 @@ export async function POST(request: Request) {
       fecha,
       hora,
       plan,
+      servicio,
+      trabajadores,
+      motivo,
     } = payload;
+    // /nomina usa el mismo agendamiento, con trabajadores en lugar de facturas
+    const esNomina = servicio === 'nomina';
 
     // Validación de campos requeridos
     if (!nombre?.trim() || !empresa?.trim() || !whatsapp?.trim() || !correo?.trim()) {
@@ -25,7 +34,14 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!facturas) {
+    if (esNomina && !TRABAJADORES.includes(trabajadores)) {
+      return NextResponse.json(
+        { error: 'Por favor selecciona cuántos trabajadores tienes.' },
+        { status: 400 }
+      );
+    }
+
+    if (!esNomina && !facturas) {
       return NextResponse.json(
         { error: 'Por favor selecciona el rango aproximado de facturas de venta al mes.' },
         { status: 400 }
@@ -61,8 +77,10 @@ export async function POST(request: Request) {
         : 'Virtual (Google Meet)';
 
     const detalleNotas = [
+      esNomina ? 'Servicio: Nómina' : null,
       `Empresa: ${empresa.trim()}`,
-      `Facturas/mes: ${facturas}`,
+      esNomina ? `Trabajadores: ${trabajadores}` : `Facturas/mes: ${facturas}`,
+      esNomina && MOTIVOS.includes(motivo) ? `Necesita: ${motivo}` : null,
       plan ? `Plan sugerido: ${plan}` : null,
       `Modalidad: ${modalidad}`,
       modalidad === 'presencial' ? `Dirección: ${direccion.trim()}` : null,
@@ -98,13 +116,13 @@ export async function POST(request: Request) {
           celular: whatsapp.trim(),
           correo: correo.trim(),
           debe_declarar: true,
-          topes_superados: [facturas],
+          topes_superados: [esNomina ? `Trabajadores: ${trabajadores}` : facturas],
           barra_patrimonio: 0,
           barra_ingresos: 0,
           barra_creditos: 0,
           barra_movimientos: 0,
           estado: 'diagnostico_solicitado',
-          source: 'contabilidad_diagnostico',
+          source: esNomina ? 'nomina_cita' : 'contabilidad_diagnostico',
         })
         .select('id')
         .single();
@@ -121,12 +139,30 @@ export async function POST(request: Request) {
         full_name: `${nombre.trim()} (${empresa.trim()})`,
         email: correo.trim(),
         phone: whatsapp.trim(),
-        source: 'contabilidad_diagnostico',
+        source: esNomina ? 'nomina_cita' : 'contabilidad_diagnostico',
         lead_id: leadId,
         stage: 'diagnostico',
       });
     } catch (e) {
       console.error('[api/diagnostico] Error en pipeline_leads:', e);
+    }
+
+    // 4. Nómina: también queda en los leads del CRM con su servicio
+    if (esNomina) {
+      try {
+        const { error: crmErr } = await erpDb().from('erp_leads').insert({
+          nombre: nombre.trim(),
+          empresa: empresa.trim(),
+          email: correo.trim(),
+          telefono: whatsapp.trim(),
+          servicio: 'nomina',
+          origen: 'web',
+          mensaje: `${detalleNotas} | Cita: ${fecha}`,
+        });
+        if (crmErr) console.error('[api/diagnostico] Error en erp_leads:', crmErr);
+      } catch (e) {
+        console.error('[api/diagnostico] Error en erp_leads:', e);
+      }
     }
 
     return NextResponse.json({

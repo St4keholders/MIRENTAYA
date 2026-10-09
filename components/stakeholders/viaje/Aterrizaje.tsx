@@ -5,7 +5,7 @@
    empresario bajan juntos; al enviar, celebran.
    ============================================================ */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import type { CosmoPose } from '../cosmo/poses';
 import { COSMO_POSES } from '../cosmo/poses';
 import { Lead } from './Lead';
@@ -22,7 +22,18 @@ function CosmoCuerpo({ pose }: { pose: CosmoPose }) {
   );
 }
 
-export function Aterrizaje({ celebrar }: { celebrar: boolean }) {
+const FRASES_CONTA: [string, string] = ['Agenda tu diagnóstico y seguimos el viaje juntos.', '¡Listo! Desde hoy viajamos juntos.'];
+
+export function Aterrizaje({
+  celebrar, frases = FRASES_CONTA, nave, className = '',
+}: {
+  celebrar: boolean;
+  /** burbuja antes y después de enviar (null = sin burbuja) */
+  frases?: [string, string] | null;
+  /** nave que aterriza (por defecto, el platillo de Cosmo) */
+  nave?: ReactNode;
+  className?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [on, setOn] = useState(false);
   useEffect(() => {
@@ -33,13 +44,15 @@ export function Aterrizaje({ celebrar }: { celebrar: boolean }) {
     return () => io.disconnect();
   }, []);
   return (
-    <div ref={ref} className={`vj-aterrizaje ${on ? 'vj-aterrizaje--on' : ''} ${celebrar ? 'vj-aterrizaje--fiesta' : ''}`} aria-hidden="true">
-      <div className={`vj-burbuja vj-burbuja--arriba ${on ? 'vj-burbuja--on' : ''}`}>
-        <span key={celebrar ? 'b' : 'a'}>{celebrar ? '¡Listo! Desde hoy viajamos juntos.' : 'Agenda tu diagnóstico y seguimos el viaje juntos.'}</span>
-      </div>
+    <div ref={ref} className={`vj-aterrizaje ${on ? 'vj-aterrizaje--on' : ''} ${celebrar ? 'vj-aterrizaje--fiesta' : ''} ${className}`} aria-hidden="true">
+      {frases && (
+        <div className={`vj-burbuja vj-burbuja--arriba ${on ? 'vj-burbuja--on' : ''}`}>
+          <span key={celebrar ? 'b' : 'a'}>{celebrar ? frases[1] : frases[0]}</span>
+        </div>
+      )}
       <div className="vj-at-escena">
         <div className="vj-ancla vj-ancla--at" data-ancla-nave="arriba" />
-        <div className="vj-at-nave"><Nave id="aterriza" conLead={false} conCosmo={false} /></div>
+        <div className="vj-at-nave">{nave ?? <Nave id="aterriza" conLead={false} conCosmo={false} />}</div>
         <div className="vj-at-personajes">
           <CosmoCuerpo pose={celebrar ? 'celebrando' : 'saludo'} />
           <svg viewBox="0 -40 200 360" className="vj-at-lead">
