@@ -1,0 +1,243 @@
+/* ============================================================
+   /nomina · Seminario de nómina con Cosmo
+   Se apoya en viaje.css (estaciones, mundo, nave guía, botones).
+   ============================================================ */
+
+/* ── Botones: adquirir + hablar con un contador ── */
+.nm-botones { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.vj-cta--sec {
+  background: rgba(59,110,255,.12); color: #fff; border: 1px solid rgba(76,135,255,.7);
+  box-shadow: 0 0 0 1px rgba(59,110,255,.2), 0 10px 34px -12px rgba(59,110,255,.7);
+}
+.vj-cta--sec::before { border-color: rgba(76,135,255,.45); animation-delay: 1.2s; }
+.vj-cta--sec:hover { background: rgba(59,110,255,.24); }
+
+/* ── Nave del seminario ── */
+.nt { display: block; width: 100%; height: auto; overflow: visible; }
+.nt-fuego { transform-box: fill-box; transform-origin: 100% 50%; animation: ntFuego .16s ease-in-out infinite alternate; }
+@keyframes ntFuego { from { transform: scaleX(.86); opacity: .8; } to { transform: scaleX(1.08); opacity: 1; } }
+.nt-pas { animation: ntPas 3.4s ease-in-out infinite; }
+@keyframes ntPas { 0%, 100% { transform: translateY(-1.2px); } 50% { transform: translateY(1.4px); } }
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.nm-hero .vj-hero__copy h1 { max-width: 15ch; }
+.nm-desliza {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; margin-top: clamp(10px, 1.8vh, 16px);
+  font-family: var(--display); font-weight: 500; font-size: clamp(1.05rem, 1.5vw, 1.25rem); color: var(--dim); letter-spacing: -.01em;
+}
+.nm-desliza svg { width: 22px; height: 22px; fill: none; stroke: var(--blue-hi); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; animation: nmRebota 1.6s ease-in-out infinite; }
+@keyframes nmRebota { 0%, 100% { transform: translateY(0); opacity: .6; } 50% { transform: translateY(6px); opacity: 1; } }
+.nm-hero .nm-botones { justify-content: center; margin-top: clamp(16px, 2.8vh, 26px); }
+.nm-hero__nave { position: relative; width: 100%; height: clamp(170px, 28vh, 260px); }
+.nm-hero__nave .vj-ancla { left: 50%; top: 62%; }
+
+/* ============================================================
+   CABECERAS DE SECCIÓN
+   ============================================================ */
+.nm-cab { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); gap: clamp(20px, 4vw, 56px); align-items: center; }
+.nm-cab__texto { display: flex; flex-direction: column; align-items: flex-start; gap: clamp(12px, 2vh, 18px); }
+.nm-cab__texto > p { margin: 0; color: var(--dim); font-size: clamp(.98rem, 1.15vw, 1.1rem); line-height: 1.55; max-width: 56ch; }
+.nm-cab__astro { position: relative; display: flex; justify-content: flex-end; align-items: center; min-height: clamp(100px, 17vh, 160px); }
+.nm-cab__astro .pl { --pl: clamp(96px, 13vh, 148px); }
+.nm-cab__astro .vj-ancla { left: 24%; top: 42%; }
+.nm-cab--como .nm-cab__astro .vj-ancla { left: 72%; top: 50%; }
+.vj-js .nm-cab__texto > * { opacity: 0; transform: translateY(16px); }
+.vj-js .vj-on .nm-cab__texto > * { opacity: 1; transform: none; transition: opacity .45s ease, transform .6s cubic-bezier(.22,1,.36,1); }
+.vj-js .vj-on .nm-cab__texto > :nth-child(2) { transition-delay: .06s; }
+.vj-js .vj-on .nm-cab__texto > :nth-child(3) { transition-delay: .12s; }
+.vj-js .nm-cab__astro .pl { opacity: 0; transform: scale(.6) rotate(-20deg); }
+.vj-js .vj-on .nm-cab__astro .pl { opacity: 1; transform: none; transition: transform .8s cubic-bezier(.22,1,.36,1), opacity .35s; }
+
+/* ============================================================
+   ¿QUÉ HACEMOS? · rescates antes / después
+   ============================================================ */
+.nm-rescates { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(14px, 1.6vw, 22px); margin-top: clamp(14px, 3vh, 30px); }
+.nm-rescates__orbita { position: absolute; left: -2%; width: 104%; top: clamp(30px, 6vh, 60px); height: 40px; overflow: visible; pointer-events: none; }
+.nm-rescates__orbita path { fill: none; stroke: rgba(191,212,255,.28); stroke-width: 1.2; stroke-dasharray: 3 7; vector-effect: non-scaling-stroke; }
+.nm-rescate {
+  --d: calc(.25s + var(--i) * .2s);
+  position: relative; z-index: 1; display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 18px clamp(14px, 2vh, 20px); border-radius: 20px; background: rgba(10,10,12,.9);
+  border: 1px solid rgba(255,90,90,.35); box-shadow: 0 0 40px -22px rgba(255,90,90,.6);
+}
+.nm-rescate h3 { font-size: clamp(1.08rem, 1.4vw, 1.28rem); letter-spacing: -.03em; }
+.nm-rescate p { margin: 0; font-size: clamp(.86rem, 1vw, .94rem); line-height: 1.5; color: #B5B9C2; }
+.nm-rescate__escena { height: clamp(88px, 15vh, 140px); }
+.nm-escena { display: block; width: 100%; height: 100%; overflow: visible; }
+
+.nm-chip { display: inline-grid; align-self: flex-start; font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; }
+.nm-chip > span { grid-area: 1 / 1; padding: 4px 10px; border-radius: 99px; border: 1px solid; white-space: nowrap; transition: opacity .3s ease; }
+.nm-chip__mal { color: #FF9C9C; background: rgba(255,80,80,.12); border-color: rgba(255,90,90,.45); }
+.nm-chip__bien { color: #CFE0FF; background: rgba(59,110,255,.18); border-color: rgba(76,135,255,.6); opacity: 0; }
+
+/* estado en peligro */
+.as-o2 { fill: #FF5A5A; transform-box: fill-box; transform-origin: 0 50%; transform: scaleX(.18); transition: transform .55s cubic-bezier(.22,1,.36,1), fill .3s; }
+.as-luz { fill: #FF5A5A; animation: nmAlerta .8s steps(2) infinite; transition: fill .3s; }
+@keyframes nmAlerta { 50% { opacity: .25; } }
+.as-boca { transition: opacity .25s; }
+.as-boca--bien { opacity: 0; }
+.nm-aura { fill: none; stroke: #4C87FF; stroke-width: 2; stroke-dasharray: 4 6; opacity: 0; transform-box: fill-box; transform-origin: center; transform: scale(.7); transition: opacity .45s, transform .6s cubic-bezier(.34,1.42,.5,1); }
+.nm-burbuja { fill: rgba(255,120,120,.55); animation: nmSube 3.2s linear infinite; transition: fill .4s; }
+@keyframes nmSube { from { transform: translateY(8px); opacity: 0; } 30% { opacity: 1; } to { transform: translateY(-14px); opacity: 0; } }
+.nm-flota { animation: nmFlota 4.2s ease-in-out infinite; }
+@keyframes nmFlota { 0%, 100% { transform: translateY(-3px); } 50% { transform: translateY(3px); } }
+.nm-cuerda { fill: none; stroke: #BFD4FF; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .45s cubic-bezier(.22,1,.36,1); }
+.nm-gancho { fill: #4C87FF; opacity: 0; transition: opacity .2s; }
+.nm-deriva { transform-box: fill-box; transform-origin: center; transform: translate(26px, 12px) rotate(14deg); transition: transform .55s cubic-bezier(.34,1.3,.5,1); }
+.nm-rayo { fill: rgba(76,135,255,.38); opacity: 0; }
+.nm-caja { transform-box: fill-box; transform-origin: center; transform: translate(72px, -42px) rotate(38deg); transition: transform .55s cubic-bezier(.34,1.3,.5,1); }
+.nm-caja__cuerpo { fill: #B88A1E; stroke: #FF5A5A; stroke-width: 2; transition: stroke .3s; }
+
+/* llegada: tarjetas entran y el rescate ocurre en cascada (~1 s) */
+.vj-js .nm-rescate { opacity: 0; transform: translateY(26px) scale(.96); }
+.vj-js .vj-on .nm-rescate {
+  opacity: 1; transform: none; border-color: rgba(76,135,255,.5); box-shadow: 0 0 0 1px rgba(59,110,255,.15), 0 22px 60px -30px rgba(59,110,255,.8);
+  transition: opacity .3s calc(var(--i) * .06s), transform .5s cubic-bezier(.22,1,.36,1) calc(var(--i) * .06s), border-color .4s var(--d), box-shadow .4s var(--d);
+}
+.vj-on .nm-rescate .nm-chip__mal { opacity: 0; transition-delay: var(--d); }
+.vj-on .nm-rescate .nm-chip__bien { opacity: 1; transition-delay: var(--d); }
+.vj-on .nm-rescate .as-o2 { transform: scaleX(1); fill: #4C87FF; transition-delay: var(--d); }
+.vj-on .nm-rescate .as-luz { fill: #4C87FF; animation: none; transition-delay: var(--d); }
+.vj-on .nm-rescate .as-boca--mal { opacity: 0; transition-delay: var(--d); }
+.vj-on .nm-rescate .as-boca--bien { opacity: 1; transition-delay: var(--d); }
+.vj-on .nm-rescate .nm-aura { opacity: .6; transform: none; transition-delay: var(--d); }
+.vj-on .nm-rescate .nm-burbuja { fill: rgba(143,179,255,.6); transition-delay: var(--d); }
+.vj-on .nm-rescate .nm-cuerda { stroke-dashoffset: 0; transition-delay: calc(var(--d) - .15s); }
+.vj-on .nm-rescate .nm-gancho { opacity: 1; transition-delay: calc(var(--d) + .2s); }
+.vj-on .nm-rescate .nm-deriva { transform: none; transition-delay: calc(var(--d) + .1s); }
+.vj-on .nm-rescate .nm-rayo { animation: nmRayo 1.1s ease-out calc(var(--d) - .2s) forwards; }
+@keyframes nmRayo { 0% { opacity: 0; } 30% { opacity: 1; } 100% { opacity: .22; } }
+.vj-on .nm-rescate .nm-caja { transform: none; transition-delay: var(--d); }
+.vj-on .nm-rescate .nm-caja__cuerpo { stroke: #F0B93C; transition-delay: var(--d); }
+
+/* ============================================================
+   ¿CÓMO LO HACEMOS? · ciclo quincenal
+   ============================================================ */
+.nm-ciclo {
+  position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: auto auto;
+  gap: clamp(18px, 3.6vh, 40px) clamp(14px, 1.6vw, 24px); margin: clamp(14px, 3vh, 30px) 0 0; padding: 0;
+}
+.nm-ciclo__pista { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.nm-ciclo__via { fill: none; stroke: rgba(191,212,255,.26); stroke-width: 1.4; stroke-dasharray: 3 7; vector-effect: non-scaling-stroke; }
+
+.nm-paso {
+  position: relative; z-index: 1; display: flex; gap: 12px; align-items: flex-start;
+  padding: clamp(12px, 1.8vh, 16px) 16px; border-radius: 16px; background: rgba(10,10,12,.93); border: 1px solid var(--line);
+  min-height: clamp(70px, 11vh, 96px); box-sizing: border-box;
+}
+.nm-paso p { margin: 0; font-size: clamp(.86rem, 1vw, .94rem); line-height: 1.45; color: #C9CDD6; }
+.nm-paso__n {
+  flex: none; width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center;
+  font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--blue-hi);
+  background: rgba(59,110,255,.12); border: 1px solid rgba(59,110,255,.3);
+}
+.nm-paso--tu { border-color: rgba(240,185,60,.55); background: linear-gradient(160deg, rgba(240,185,60,.14), rgba(10,10,12,.93) 62%); box-shadow: 0 0 44px -16px rgba(240,185,60,.75); }
+.nm-paso--tu p { color: #fff; font-weight: 600; }
+.nm-paso--tu .nm-paso__n { color: #F0B93C; background: rgba(240,185,60,.16); border-color: rgba(240,185,60,.5); }
+.nm-recibo { position: absolute; right: 12px; top: -12px; width: 20px; opacity: 0; }
+.nm-recibo path:first-child { fill: #EEF1F6; }
+.nm-recibo path:last-child { fill: none; stroke: #8B9099; stroke-width: 1.8; stroke-linecap: round; }
+.nm-ciclo__giro { position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; }
+.nm-ciclo__giro .pl { --pl: clamp(50px, 8vh, 72px); }
+.nm-ciclo__giro svg { position: absolute; width: clamp(84px, 13vh, 118px); height: auto; fill: none; stroke: #8FB3F5; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; animation: vjGiro 8s linear infinite; }
+
+/* llegada: la luz recorre los pasos en orden y luego pasa cada 8 s */
+.vj-js .nm-paso, .vj-js .nm-ciclo__giro { opacity: 0; transform: scale(.92); }
+.vj-js .vj-on .nm-paso { opacity: 1; transform: none; transition: opacity .3s calc(var(--f) * 1.15s), transform .45s cubic-bezier(.34,1.3,.5,1) calc(var(--f) * 1.15s); }
+.vj-js .vj-on .nm-ciclo__giro { opacity: 1; transform: none; transition: opacity .4s .7s, transform .5s .7s; }
+.vj-on .nm-paso { animation: nmPulso 8s linear infinite; animation-delay: calc(var(--f) * 8s); }
+@keyframes nmPulso {
+  0% { border-color: rgba(143,179,255,.9); box-shadow: 0 0 0 1px rgba(143,179,255,.35), 0 0 36px -6px rgba(76,135,255,.85); }
+  10%, 100% { border-color: var(--line); box-shadow: none; }
+}
+.vj-on .nm-paso--tu { animation-name: nmPulsoTu; }
+@keyframes nmPulsoTu {
+  0% { box-shadow: 0 0 0 1px rgba(240,185,60,.45), 0 0 46px -4px rgba(240,185,60,.9); }
+  12%, 100% { box-shadow: 0 0 44px -16px rgba(240,185,60,.75); }
+}
+.vj-on .nm-recibo { animation: nmRecibo 8s ease-out infinite; animation-delay: calc(var(--f) * 8s + .1s); }
+@keyframes nmRecibo { 0% { opacity: 1; transform: none; } 9% { opacity: 0; transform: translate(26px, -30px) rotate(18deg); } 100% { opacity: 0; } }
+
+/* ============================================================
+   ¿POR QUÉ NOSOTROS? · del caos al orden
+   ============================================================ */
+.nm-porque__in { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 64px); align-items: center; }
+.nm-orden { position: relative; height: clamp(300px, 48vh, 420px); }
+.nm-orden .vj-ancla { left: 20%; top: 4%; }
+.nm-hoja {
+  position: absolute; left: 50%; top: 52%; width: 290px; height: 50px; margin: -25px 0 0 -145px; box-sizing: border-box;
+  display: grid; align-items: center; padding: 0 18px; border-radius: 14px;
+  font-family: var(--display); font-weight: 600; font-size: 15px; letter-spacing: -.012em;
+  background: #15161D; border: 1px solid rgba(255,90,90,.45); box-shadow: 0 16px 40px -20px rgba(0,0,0,.9);
+  transform: translate(var(--x), var(--y)) rotate(var(--r));
+}
+.nm-hoja > span { grid-area: 1 / 1; }
+.nm-hoja__mal { color: #FF9C9C; }
+.nm-hoja__mal::before { content: "!"; display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 10px; border-radius: 50%; background: rgba(255,90,90,.18); font-family: var(--mono); font-size: 12px; }
+.nm-hoja__bien { color: #fff; opacity: 0; }
+.vj-js .nm-hoja { opacity: 0; }
+.vj-on .nm-hoja { opacity: 1; transition: opacity .25s ease calc(var(--i) * .04s); animation: nmOrdena .6s cubic-bezier(.34,1.25,.5,1) calc(.3s + var(--i) * .07s) forwards; }
+@keyframes nmOrdena {
+  to { transform: translate(0, var(--y1)) rotate(0); border-color: rgba(76,135,255,.55); background: linear-gradient(90deg, rgba(59,110,255,.16), #15161D 70%); box-shadow: 0 0 0 1px rgba(59,110,255,.15), 0 18px 44px -24px rgba(59,110,255,.8); }
+}
+.vj-on .nm-hoja__mal { animation: nmFuera .25s ease calc(.5s + var(--i) * .07s) forwards; }
+.vj-on .nm-hoja__bien { animation: nmDentro .3s ease calc(.58s + var(--i) * .07s) forwards; }
+@keyframes nmFuera { to { opacity: 0; } }
+@keyframes nmDentro { to { opacity: 1; } }
+
+/* ── Aterrizaje con la nave del seminario ── */
+#agenda.vj-form { max-width: none; padding-left: 0; padding-right: 0; padding-bottom: 0; justify-content: flex-start; }
+@media (min-width: 900px) { #agenda.vj-form { padding-right: 60px; } }
+.nm-aterrizaje .vj-at-nave { left: 42%; width: 104%; bottom: 23%; }
+.nm-aterrizaje .vj-at-personajes { left: 70%; width: 52%; height: 34%; }
+
+/* ============================================================
+   MÓVIL Y PANTALLAS MEDIANAS
+   ============================================================ */
+@media (max-width: 1099px) {
+  .nm-porque__in { grid-template-columns: 1fr; }
+  .nm-ciclo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .nm-paso, .nm-ciclo__giro { grid-column: auto !important; grid-row: auto !important; }
+  .nm-ciclo__pista { display: none; }
+  .nm-ciclo__giro { display: none; }
+}
+@media (max-width: 899px) {
+  .nm-hero .nm-botones { flex-direction: column; width: 100%; }
+  .nm-hero .nm-botones .vj-cta { width: 100%; max-width: 340px; }
+  .nm-hero__nave { height: clamp(160px, 26vh, 230px); }
+  .nm-cab { grid-template-columns: 1fr; gap: 10px; }
+  .nm-cab__texto .nm-botones { width: 100%; }
+  .nm-cab__texto .nm-botones .vj-cta { flex: 1 1 100%; }
+  .nm-cab__astro { min-height: 96px; padding-right: 6%; }
+  .nm-cab__astro .pl { --pl: 84px; }
+  .nm-cab__astro .vj-ancla { left: 20%; }
+  .nm-cab--como .nm-cab__astro { min-height: 80px; }
+  .nm-cab--como .nm-cab__astro .vj-ancla { left: 76%; }
+  .nm-rescates { grid-template-columns: 1fr; }
+  .nm-rescates__orbita { display: none; }
+  .nm-rescate { display: grid; grid-template-columns: 112px minmax(0, 1fr); grid-template-rows: auto auto 1fr; column-gap: 14px; row-gap: 6px; padding: 12px 14px; }
+  .nm-rescate__escena { grid-row: 1 / span 3; height: 100px; align-self: center; }
+  .nm-ciclo { grid-template-columns: 1fr; gap: 10px; }
+  .nm-paso { min-height: 0; }
+  .nm-orden { height: 300px; }
+  .nm-hoja { width: 250px; margin-left: -125px; font-size: 14px; height: 46px; margin-top: -23px; }
+  .nm-aterrizaje .vj-at-nave { left: 36%; width: 90%; }
+}
+
+/* ── Reducir movimiento: estados finales, sin animaciones ── */
+@media (prefers-reduced-motion: reduce) {
+  .nt-fuego, .nt-pas, .nm-desliza svg, .nm-flota, .nm-burbuja, .as-luz, .nm-ciclo__giro svg { animation: none !important; }
+  .nm-rescate, .nm-rescate * { transition: none !important; }
+  .vj-js .nm-rescate, .vj-js .nm-paso, .vj-js .nm-ciclo__giro, .vj-js .nm-cab__texto > *, .vj-js .nm-cab__astro .pl { opacity: 1 !important; transform: none !important; transition: none !important; }
+  .nm-paso, .nm-recibo { animation: none !important; }
+  .nm-hoja { opacity: 1 !important; animation: none !important; transform: translate(0, var(--y1)) !important; border-color: rgba(76,135,255,.55); }
+  .nm-hoja__mal { display: none; }
+  .nm-hoja__bien { opacity: 1 !important; animation: none !important; }
+}
+
+/* la vía del ciclo fluye en el sentido de los pasos */
+.vj-on .nm-ciclo__via { stroke: rgba(143,179,255,.45); animation: nmFluye 1s linear infinite; }
+@keyframes nmFluye { to { stroke-dashoffset: -10; } }
+@media (prefers-reduced-motion: reduce) { .vj-on .nm-ciclo__via { animation: none; } }

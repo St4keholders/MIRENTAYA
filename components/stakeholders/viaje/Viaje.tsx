@@ -13,7 +13,7 @@
    Encima del contenido: la nave guía, su burbuja y el mapa.
    ============================================================ */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Lead, Maletin, Factura, type Animo, type PoseBrazos } from './Lead';
 import { Nave, PortalSH, portalProgreso } from './Nave';
 import { Planeta, PlanetaHorizonte, type Variante } from './Planeta';
@@ -77,7 +77,28 @@ const PAPELES: Array<{ tipo: 'f' | 'f1' | 'm'; x: number; y: number; w: number; 
 
 type Punto = { x: number; y: number; sc: number };
 
-export function Viaje() {
+export interface ViajeOpciones {
+  /** 'rescate': el empresario cae y Cosmo lo rescata (contabilidad). 'tour': la nave ya viaja desde el hero (nómina). */
+  modo?: 'rescate' | 'tour';
+  /** narración de Cosmo por estación */
+  frases?: Record<number, string>;
+  mapa?: Array<{ k: number; c: string; etiqueta: string }>;
+  /** color del planeta gigante del hero */
+  planeta?: Variante;
+  /** estación del aterrizaje: ahí la nave guía desaparece */
+  ultima?: number;
+  /** contenido de la nave guía (por defecto, la nave de Cosmo con el empresario) */
+  nave?: (est: number) => ReactNode;
+  /** ancho base de la nave guía en px: [escritorio, móvil] */
+  naveAncho?: [number, number];
+  /** alto / ancho de la nave guía (para ubicar la burbuja) */
+  naveProporcion?: number;
+}
+
+export function Viaje({
+  modo = 'rescate', frases = FRASES, mapa = MAPA, planeta = 'hogar', ultima = 6, nave, naveAncho = [300, 220], naveProporcion = 0.6,
+}: ViajeOpciones = {}) {
+  const cfg = useRef({ modo, frases, ultima, naveAncho, naveProporcion });
   const [est, setEst] = useState(0);
   const lejosRef = useRef<HTMLDivElement>(null);
   const gigRef = useRef<HTMLDivElement>(null);
@@ -90,11 +111,14 @@ export function Viaje() {
   useEffect(() => {
     const html = document.documentElement;
     html.classList.add('vj-js', 'vj-snap');
+    const { frases, ultima, naveAncho, naveProporcion } = cfg.current;
+    const tour = cfg.current.modo === 'tour';
     const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const secciones = Array.from(document.querySelectorAll<HTMLElement>('[data-estacion]'));
     const gig = gigRef.current, lead = leadRef.current, portal = portalRef.current;
     const guia = guiaRef.current, burbuja = burbujaRef.current, lejos = lejosRef.current, estela = estelaRef.current;
-    if (!gig || !lead || !portal || !guia || !burbuja || !lejos || !estela) return;
+    if (!gig || !guia || !burbuja || !lejos || !estela) return;
+    if (!tour && (!lead || !portal)) return;
     const span = burbuja.querySelector('span') as HTMLSpanElement;
     const rayo = () => guia.querySelector<SVGElement>('.nv-rayo');
     const tripulante = () => guia.querySelector<SVGElement>('.nv-tripulante');
@@ -115,7 +139,8 @@ export function Viaje() {
       const W = window.innerWidth, H = window.innerHeight;
       const movil = W < 900;
       S.W = W; S.H = H; S.movil = movil;
-      S.naveW = movil ? 220 : 300;
+      S.naveW = movil ? naveAncho[1] : naveAncho[0];
+      guia.style.width = `${S.naveW}px`;
       const copia = document.querySelector<HTMLElement>('.vj-hero__copy');
       const r = copia?.getBoundingClientRect();
       const abajo = r ? r.bottom + window.scrollY : H * 0.5;
@@ -165,12 +190,15 @@ export function Viaje() {
       secciones.forEach((s) => s.classList.toggle('vj-on', Number(s.dataset.estacion) === k));
       lejos.style.transform = `translate3d(0,${-k * 0.5 * S.H}px,0)`;
       S.llegada = now;
-      S.hastaBurbuja = now + (k === 1 ? 6200 : 4600);
+      S.hastaBurbuja = now + (k === 1 && !tour ? 6200 : k === 0 ? 7000 : 4600);
       contar(secciones.find((s) => Number(s.dataset.estacion) === k));
       if (inicial) {
         // entra directo a una estación (enlace con #): sin rescate ni vuelo
-        if (k >= 1) { S.z = 1; S.r = 1; }
-        if (k >= 2) S.s = 1;
+        if (tour) { S.r = 1; if (k >= 1) S.s = 1; }
+        else {
+          if (k >= 1) { S.z = 1; S.r = 1; }
+          if (k >= 2) S.s = 1;
+        }
         S.vuelo.t0 = -1;
         return;
       }
@@ -190,12 +218,21 @@ export function Viaje() {
       const a = sec?.querySelector<HTMLElement>('[data-ancla-nave]');
       if (!a) return null;
       const r = a.getBoundingClientRect();
-      return { x: r.left + r.width / 2, y: r.top + r.height / 2, sc: S.movil ? 0.42 : 0.5, modo: (S.movil ? a.dataset.anclaMovil : a.dataset.anclaNave) || 'arriba' };
+      const [scD, scM] = (a.dataset.anclaEscala || '0.5,0.42').split(',').map(Number);
+      return { x: r.left + r.width / 2, y: r.top + r.height / 2, sc: S.movil ? scM : scD, modo: (S.movil ? a.dataset.anclaMovil : a.dataset.anclaNave) || 'arriba' };
     };
 
     /* ── capa cercana: planeta gigante, empresario, portal ── */
     const dibujarCerca = () => {
       const { W, H, movil, r } = S;
+      if (tour) {
+        // la nave ya viaja: el planeta del hero solo se hunde al partir
+        const h = easeInOut(S.s);
+        gig.style.transform = `translate3d(0,${h * H * 0.75}px,0) rotate(${-4 * h}deg)`;
+        gig.style.visibility = h >= 1 ? 'hidden' : '';
+        return;
+      }
+      if (!lead || !portal) return;
       const e = easeInOut(S.z);
       const hunde = easeInOut(S.s);
       gig.style.transform = `translate3d(${-(S.lx0 - W / 2) * 0.3 * e}px,${H * 0.1 * e + hunde * H * 0.75}px,0) rotate(${-5 * e}deg) scale(${1 + 0.22 * e})`;
@@ -236,7 +273,7 @@ export function Viaje() {
       const k = S.k;
       const sale = easeOut(seg(S.r, 0.5, 0.64));
       let obj: Punto;
-      if (k <= 1) { obj = S.rescate; modo = 'arriba'; }
+      if (!tour && k <= 1) { obj = S.rescate; modo = 'arriba'; }
       else {
         const a = anclaDe(k);
         if (a) { obj = { x: a.x, y: a.y, sc: a.sc * Math.max(0.06, sale) }; modo = a.modo; }
@@ -254,7 +291,7 @@ export function Viaje() {
       const rot = quieto ? 0 : lerp(S.nave.rot, Math.max(-16, Math.min(16, vx * 9)), 0.18);
       S.nave = { x, y, sc, rot };
       guia.style.transform = `translate3d(${x}px,${y}px,0) translate(-50%,-50%) scale(${sc}) rotate(${rot}deg)`;
-      const visible = k >= 1 && k <= 5;
+      const visible = tour ? k < ultima : k >= 1 && k < ultima;
       guia.style.opacity = String(visible ? seg(S.r, 0.5, 0.53) : 0);
       return t;
     };
@@ -264,16 +301,16 @@ export function Viaje() {
       const { k, r, W, H } = S;
       let texto = '';
       let ax = S.nave.x, ay = S.nave.y, m = modo;
-      const w = S.naveW * S.nave.sc, h = w * 0.6;
-      if (k === 1 && r >= 0.1 && r < 0.5) {
+      const w = S.naveW * S.nave.sc, h = w * naveProporcion;
+      if (!tour && k === 1 && r >= 0.1 && r < 0.5) {
         texto = FRASE_PORTAL; m = 'arriba';
-        const pw = portal.offsetWidth;
+        const pw = portal?.offsetWidth ?? 200;
         ax = W * 0.5; ay = H * (S.movil ? 0.3 : 0.28) - pw * 0.42;
-      } else if (k === 1 && r >= 0.8 && now < S.hastaBurbuja) {
+      } else if (!tour && k === 1 && r >= 0.8 && now < S.hastaBurbuja) {
         texto = FRASE_RESCATE;
         ay = S.nave.y - h * 0.5;
-      } else if (k >= 2 && k <= 5 && vuelo > 0.8 && now < S.hastaBurbuja) {
-        texto = FRASES[k];
+      } else if ((tour || k >= 2) && k < ultima && frases[k] && vuelo > 0.8 && now < S.hastaBurbuja && now - S.llegada > (k === 0 ? 600 : 0)) {
+        texto = frases[k];
         ay = S.nave.y - h * 0.5;
       }
       const on = texto !== '';
@@ -325,9 +362,14 @@ export function Viaje() {
       if (k !== S.k) cambio(k, now, false);
       const paso = (v: number, objetivo: number, dur: number) =>
         quieto ? objetivo : v < objetivo ? Math.min(objetivo, v + dt / dur) : Math.max(objetivo, v - dt / dur);
-      S.z = paso(S.z, S.k >= 1 ? 1 : 0, 850);
-      S.r = S.k >= 1 ? paso(S.r, 1, 1700) : paso(S.r, 0, 380);
-      S.s = paso(S.s, S.k >= 2 ? 1 : 0, 900);
+      if (tour) {
+        S.z = 0; S.r = 1;
+        S.s = paso(S.s, S.k >= 1 ? 1 : 0, 900);
+      } else {
+        S.z = paso(S.z, S.k >= 1 ? 1 : 0, 850);
+        S.r = S.k >= 1 ? paso(S.r, 1, 1700) : paso(S.r, 0, 380);
+        S.s = paso(S.s, S.k >= 2 ? 1 : 0, 900);
+      }
       dibujarCerca();
       const vuelo = dibujarNave(now, dt);
       dibujarBurbuja(now, vuelo);
@@ -397,7 +439,8 @@ export function Viaje() {
     medir();
     const k0 = estacionActual();
     cambio(k0, performance.now(), true);
-    const a0 = k0 >= 2 ? anclaDe(k0) : null;
+    if (tour) S.r = 1;
+    const a0 = k0 >= (tour ? 0 : 2) ? anclaDe(k0) : null;
     if (a0) S.nave = { x: a0.x, y: a0.y, sc: a0.sc, rot: 0 };
     despertar();
 
@@ -437,10 +480,10 @@ export function Viaje() {
           ))}
         </div>
         <div className="vj-gigante" ref={gigRef}>
-          <PlanetaHorizonte v="hogar" giro={150} rep={3} fraccion={0.3} />
+          <PlanetaHorizonte v={planeta} giro={150} rep={3} fraccion={0.3} />
         </div>
-        <div className="vj-portal" ref={portalRef}><PortalSH /></div>
-        <div className="vj-lead" ref={leadRef}>
+        {modo === 'rescate' && <div className="vj-portal" ref={portalRef}><PortalSH /></div>}
+        {modo === 'rescate' && <div className="vj-lead" ref={leadRef}>
           <div className="vj-lead__giro">
             <svg viewBox="0 -40 200 360" overflow="visible"><Lead animo="terror" brazos="agitando" despeinado /></svg>
           </div>
@@ -449,21 +492,21 @@ export function Viaje() {
               <svg viewBox="-4 -4 72 64">{p.tipo === 'm' ? <Maletin /> : <Factura tono={p.tipo === 'f1' ? 1 : 0} />}</svg>
             </div>
           ))}
-        </div>
+        </div>}
       </div>
       <canvas className="vj-estela" ref={estelaRef} aria-hidden="true" />
 
       {/* nave guía: Cosmo con el empresario a bordo */}
       <div className="vj-guia" ref={guiaRef} aria-hidden="true">
         <div className="vj-guia__cuerpo">
-          <Nave id="guia" pose={t.pose} animo={t.animo} brazos={t.brazos} />
+          {nave ? nave(est) : <Nave id="guia" pose={t.pose} animo={t.animo} brazos={t.brazos} />}
         </div>
       </div>
       <div className="vj-burbuja-guia" ref={burbujaRef} aria-hidden="true"><span /></div>
 
       {/* mapa lateral de planetas */}
       <nav className="vj-mapa" aria-label="Recorrido">
-        {MAPA.map((m) => {
+        {mapa.map((m) => {
           const activo = est === m.k || (m.k === 0 && est === 1);
           return (
             <button

@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
-import ServicioPage from '@/components/stakeholders/ServicioPage';
+import NominaPage from '@/components/stakeholders/nomina/NominaPage';
 
 export const metadata: Metadata = {
-  title: 'Nómina electrónica · Stakeholders',
-  description: 'Liquidación de nómina, transmisión de nómina electrónica a la DIAN, PILA y prestaciones sociales.',
+  title: 'Gestionamos la nómina de tu empresa · Stakeholders',
+  description: 'Afiliaciones a salud, pensión, caja de compensación y ARL, prestaciones, liquidaciones y nómina electrónica. Agenda tu cita y recibe tu cotización.',
 };
 
 export default function Page() {
-  return <ServicioPage id="nomina" />;
+  return <NominaPage />;
 }
