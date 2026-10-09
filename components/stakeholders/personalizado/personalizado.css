@@ -1,0 +1,181 @@
+/* ============================================================
+   /personalizado · Diseña tu servicio (el cohete)
+   Se apoya en viaje.css (botones destacados, burbuja de Cosmo).
+   ============================================================ */
+
+/* ── HERO ── */
+.ch-hero {
+  position: relative; min-height: 100vh; min-height: 100svh; box-sizing: border-box;
+  padding: calc(84px + env(safe-area-inset-top)) var(--pad) 20px; display: flex; align-items: center;
+}
+.ch-hero__in { width: 100%; max-width: var(--maxw); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr); gap: clamp(20px, 4vw, 56px); align-items: center; }
+.ch-hero__texto { display: flex; flex-direction: column; align-items: flex-start; }
+.ch-etiqueta {
+  display: inline-flex; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--blue-hi); padding: 6px 14px; background: rgba(59,110,255,.08); border: 1px solid rgba(59,110,255,.22); border-radius: 999px;
+}
+.ch-hero h1 { font-size: clamp(2.3rem, min(5.4vw, 8vh), 4.4rem); letter-spacing: -.045em; line-height: 1.02; margin-top: clamp(10px, 2vh, 18px); }
+.ch-sub { margin: clamp(8px, 1.4vh, 12px) 0 0; color: var(--dim); font-size: clamp(1.02rem, 1.4vw, 1.2rem); line-height: 1.5; }
+.ch-instruccion {
+  margin: clamp(14px, 2.4vh, 22px) 0 10px; display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: .1em; color: #BFD4FF;
+}
+.ch-instruccion::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--blue-hi); box-shadow: 0 0 0 0 rgba(76,135,255,.7); animation: chPunto 1.6s ease-out infinite; }
+@keyframes chPunto { to { box-shadow: 0 0 0 10px rgba(76,135,255,0); } }
+
+/* tarjetas de piezas */
+.ch-cartas { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ch-carta {
+  position: relative; display: grid; grid-template-columns: 44px minmax(0, 1fr) 22px; gap: 12px; align-items: start; text-align: left;
+  padding: clamp(11px, 1.8vh, 15px) 14px; border-radius: 16px; background: rgba(10,10,12,.86); border: 1px solid var(--line);
+  transition: border-color .25s, background .25s, box-shadow .25s, transform .25s var(--spring);
+  animation: chEntra .6s cubic-bezier(.22,1,.36,1) backwards; animation-delay: calc(.15s + var(--i) * .07s);
+}
+@keyframes chEntra { from { opacity: 0; transform: translateY(16px); } }
+.ch-carta:hover:not(:disabled) { border-color: rgba(76,135,255,.5); transform: translateY(-2px); }
+.ch-carta:focus-visible { outline: 2px solid var(--blue-hi); outline-offset: 3px; }
+.ch-carta:disabled { cursor: default; }
+.ch-icono { display: block; width: 44px; height: 44px; filter: grayscale(1) brightness(.75); transition: filter .3s; }
+.ch-carta__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ch-carta__pieza { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--dimmer); }
+.ch-carta__servicio { font-family: var(--display); font-size: clamp(1rem, 1.25vw, 1.1rem); letter-spacing: -.02em; color: #fff; }
+.ch-carta__linea { font-size: clamp(.8rem, .95vw, .86rem); line-height: 1.4; color: var(--dim); }
+.ch-carta__check { width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.25); display: grid; place-items: center; transition: background .25s, border-color .25s; }
+.ch-carta__check svg { width: 13px; height: 13px; fill: none; stroke: #fff; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 16; stroke-dashoffset: 16; transition: stroke-dashoffset .3s .05s; }
+.ch-carta.is-on { border-color: rgba(76,135,255,.75); background: linear-gradient(150deg, rgba(59,110,255,.2), rgba(10,10,12,.9) 70%); box-shadow: 0 0 0 1px rgba(59,110,255,.25), 0 16px 44px -22px rgba(59,110,255,.9); }
+.ch-carta.is-on .ch-icono { filter: none; }
+.ch-carta.is-on .ch-carta__pieza { color: var(--blue-hi); }
+.ch-carta.is-on .ch-carta__check { background: var(--blue); border-color: var(--blue); }
+.ch-carta.is-on .ch-carta__check svg { stroke-dashoffset: 0; }
+
+/* acciones */
+.ch-acciones { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: clamp(16px, 2.8vh, 26px); }
+.ch-cotizar { transition: opacity .3s, filter .3s, transform .3s var(--spring); }
+.ch-cotizar:disabled { opacity: .32; filter: grayscale(.8); cursor: not-allowed; box-shadow: none; }
+.ch-cotizar:disabled::before, .ch-cotizar:disabled::after { animation: none; opacity: 0; }
+.ch-cotizar.is-listo:not(:disabled) { animation: chListo .5s cubic-bezier(.34,1.5,.5,1); }
+@keyframes chListo { from { transform: scale(.9); } }
+.ch-salida { color: var(--dim); font-size: .92rem; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: rgba(255,255,255,.25); padding: 6px 0; transition: color .2s; }
+.ch-salida:hover { color: #fff; }
+
+/* escena del cohete */
+.ch-hero__escena { position: relative; height: min(76vh, 640px); display: flex; justify-content: center; align-items: flex-end; }
+.ch-plataforma {
+  position: absolute; left: 14%; right: 14%; bottom: 1%; height: 46px; border-radius: 50%;
+  background: radial-gradient(ellipse 50% 50% at 50% 50%, rgba(59,110,255,.45), rgba(59,110,255,0) 72%);
+}
+.ch-plataforma::after { content: ""; position: absolute; left: 22%; right: 22%; top: 40%; height: 8px; border-radius: 4px; background: #161C36; box-shadow: 0 0 0 1px rgba(76,135,255,.35); }
+.ch-cohete-wrap { position: relative; z-index: 1; height: 94%; aspect-ratio: 240 / 560; margin-bottom: 2.4%; animation: chBaja 1s cubic-bezier(.22,1,.36,1) backwards; }
+.ch { display: block; width: 100%; height: 100%; overflow: visible; }
+@keyframes chBaja { from { opacity: 0; transform: translateY(-30vh); } }
+.ch-pieza { transform-box: fill-box; transform-origin: 50% 50%; transition: filter .35s, opacity .35s; cursor: pointer; }
+.ch-pieza:not(.is-on) { filter: grayscale(1) brightness(.5); opacity: .62; }
+.ch-pieza:not(.is-on):hover { filter: grayscale(.6) brightness(.8); opacity: .85; }
+.ch-pieza.is-on { filter: drop-shadow(0 0 10px rgba(76,135,255,.55)); animation: chEncaja .55s cubic-bezier(.34,1.5,.5,1) backwards; }
+@keyframes chEncaja { 0% { transform: translateY(-34px) scale(1.08); opacity: .2; } 60% { opacity: 1; } 100% { transform: none; } }
+.ch-led { animation: chLed 1.4s ease-in-out infinite; }
+@keyframes chLed { 50% { opacity: .35; } }
+.ch-fuego { opacity: 0; transform: scaleY(.2); transform-box: fill-box; transform-origin: 50% 0; transition: opacity .25s, transform .35s; }
+.is-despegue .ch-fuego, .ch--viaje .ch-fuego { opacity: 1; transform: none; animation: chLlama .09s ease-in-out infinite alternate; }
+@keyframes chLlama { from { transform: scaleY(.9) scaleX(.96); } to { transform: scaleY(1.06) scaleX(1.03); } }
+
+/* despegue: tiembla, enciende y sale disparado */
+.is-despegue .ch-cohete-wrap { animation: chDespega 1.25s linear forwards; }
+@keyframes chDespega {
+  0% { transform: none; }
+  8% { transform: translate(-2px, 1px); } 16% { transform: translate(2px, -1px); } 24% { transform: translate(-2px, 1px); } 32% { transform: translate(2px, 0); }
+  40% { transform: translateY(0); } 55% { transform: translateY(-5vh); } 70% { transform: translateY(-20vh); } 85% { transform: translateY(-55vh); }
+  100% { transform: translateY(-130vh); }
+}
+.ch-humo { position: absolute; left: 50%; bottom: 4%; width: 0; height: 0; z-index: 2; }
+.ch-humo span { position: absolute; left: -32px; top: -32px; width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(circle, rgba(191,212,255,.4), rgba(191,212,255,0) 70%); opacity: 0; }
+.is-despegue .ch-humo span { animation: chHumo 1.4s ease-out forwards; animation-delay: calc(.35s + var(--i) * .05s); }
+@keyframes chHumo { from { opacity: .95; transform: translate(0, 0) scale(.3); } to { opacity: 0; transform: translate(calc((var(--i) - 3) * 46px), -24px) scale(2.4); } }
+
+/* Cosmo junto a la plataforma */
+.ch-cosmo { position: absolute; right: 0; bottom: 3%; width: clamp(92px, 10vw, 140px); z-index: 3; }
+.ch-cosmo__svg { display: block; width: 100%; height: auto; overflow: visible; }
+.ch-cosmo .vj-burbuja { left: auto; right: 10%; top: 0; transform: translateY(-100%); max-width: 230px; }
+.ch-cosmo .vj-burbuja > span { transform-origin: 80% 100%; animation: chBurbuja .45s cubic-bezier(.34,1.42,.5,1) .9s both; }
+.ch-cosmo .vj-burbuja > span::after { left: 78%; }
+@keyframes chBurbuja { from { opacity: 0; transform: translateY(8px) scale(.9); } }
+.is-despegue .ch-cosmo .vj-burbuja > span { animation-delay: .05s; }
+
+/* ── FORMULARIO + VIAJE ── */
+.ch-form { padding: calc(84px + env(safe-area-inset-top)) var(--pad) 0; }
+.ch-form[hidden] { display: none; }
+.ch-form__in { max-width: var(--maxw); margin: 0 auto; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(20px, 3vw, 48px); align-items: start; }
+.ch-form .diagnostic-box { margin: 0; }
+.ch-form__sub { color: var(--dim); margin-top: 10px; font-size: 1.05rem; line-height: 1.55; }
+.ch-form__piezas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ch-form__pieza { display: flex; align-items: center; gap: 10px; text-align: left; font-size: .88rem; }
+.ch-form__pieza .ch-icono { width: 26px; height: 26px; flex: none; }
+.ch-form__pieza.active .ch-icono { filter: none; }
+.ch-form__mensaje { resize: vertical; min-height: 84px; font-family: var(--body); line-height: 1.5; }
+.ch-redisenar { display: block; margin: 18px auto 0; }
+.ch-form .conta-footer { margin-top: 60px; }
+
+.ch-viaje {
+  position: sticky; top: 100px; height: min(72vh, 600px); border-radius: 28px; overflow: hidden;
+  background: radial-gradient(ellipse 70% 60% at 50% 45%, rgba(59,110,255,.14), rgba(0,0,0,0) 72%), rgba(5,6,12,.55);
+  border: 1px solid var(--line-soft);
+}
+.ch-viaje__lineas span {
+  position: absolute; top: -30%; left: calc(3% + var(--i) * 6.1%); width: 1.5px; height: var(--h);
+  background: linear-gradient(to bottom, rgba(191,212,255,0), rgba(191,212,255,.55));
+  animation: chLinea var(--v) linear infinite; animation-delay: calc(var(--i) * -.29s);
+}
+@keyframes chLinea { to { transform: translateY(900px); } }
+.ch-viaje__astro { position: absolute; top: 0; animation: chPasa linear infinite; }
+.ch-viaje__astro--a { left: 8%; --pl: 54px; animation-duration: 9s; animation-delay: -2s; }
+.ch-viaje__astro--b { right: 9%; --pl: 34px; animation-duration: 6.5s; animation-delay: -5s; }
+.ch-viaje__astro--c { left: 70%; --pl: 76px; animation-duration: 12s; animation-delay: -9s; }
+.ch-viaje__astro .pl { --pl: inherit; }
+@keyframes chPasa { from { transform: translateY(-140px); } to { transform: translateY(760px); } }
+.ch-viaje__cohete { position: absolute; left: 50%; top: 46%; height: 70%; aspect-ratio: 240 / 560; transform: translate(-50%, -50%); animation: chVaiven 3.2s ease-in-out infinite; }
+@keyframes chVaiven { 0%, 100% { transform: translate(-50%, -50%) rotate(-2deg); } 50% { transform: translate(-50%, -54%) rotate(2deg); } }
+.ch-viaje__cosmo { position: absolute; right: 6%; bottom: 5%; width: clamp(70px, 8vw, 100px); animation: chFlota 4s ease-in-out infinite; }
+@keyframes chFlota { 50% { transform: translateY(-8px); } }
+.ch-fiesta { position: absolute; left: 50%; top: 42%; width: 0; height: 0; z-index: 3; }
+.ch-fiesta svg { position: absolute; width: 18px; height: 18px; left: -9px; top: -9px; opacity: 0; overflow: visible; }
+.is-fiesta .ch-fiesta svg { animation: chFiesta 1.4s cubic-bezier(.22,1,.36,1) var(--d) 2 both; }
+@keyframes chFiesta { 0% { opacity: 1; transform: rotate(var(--a)) translateX(0) scale(.2); } 70% { opacity: 1; } 100% { opacity: 0; transform: rotate(var(--a)) translateX(160px) scale(1.1) rotate(200deg); } }
+
+/* ── MÓVIL ── */
+@media (max-width: 899px) {
+  .ch-hero { align-items: stretch; padding-top: calc(90px + env(safe-area-inset-top)); padding-bottom: 14px; }
+  .ch-hero__in { display: flex; flex-direction: column; gap: 0; height: max(calc(100svh - 104px - env(safe-area-inset-top)), 620px); }
+  .ch-hero__texto { display: contents; }
+  .ch-etiqueta { align-self: flex-start; font-size: 10px; padding: 5px 11px; }
+  .ch-hero h1 { font-size: clamp(2rem, 9.4vw, 2.6rem); margin-top: 8px; }
+  .ch-sub { font-size: .98rem; }
+  .ch-instruccion { margin: 8px 0 0; font-size: 10.5px; }
+  .ch-hero__escena { order: 5; flex: 1 1 0; align-self: stretch; width: 100%; height: auto; min-height: 150px; margin: 6px 0; }
+  .ch-cohete-wrap { height: 96%; }
+  .ch-cartas { order: 6; gap: 8px; }
+  .ch-carta { grid-template-columns: 30px minmax(0, 1fr); gap: 8px; padding: 10px; border-radius: 14px; }
+  .ch-carta .ch-icono { width: 30px; height: 30px; }
+  .ch-carta__pieza { display: none; }
+  .ch-carta__servicio { font-size: .9rem; line-height: 1.15; }
+  .ch-carta__linea { font-size: .74rem; line-height: 1.35; }
+  .ch-carta__check { position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; }
+  .ch-carta__check svg { width: 11px; height: 11px; }
+  .ch-acciones { order: 7; flex-direction: column; align-items: stretch; gap: 4px; margin-top: 12px; }
+  .ch-acciones .ch-salida { text-align: center; }
+  .ch-cosmo { width: 64px; right: 6%; bottom: 2%; }
+  .ch-cosmo .vj-burbuja { max-width: 160px; right: 0; }
+  .ch-cosmo .vj-burbuja > span { font-size: 12px; padding: 8px 10px; }
+  .ch-form { padding-top: calc(76px + env(safe-area-inset-top)); }
+  .ch-form__in { grid-template-columns: 1fr; }
+  .ch-viaje { position: relative; top: 0; height: 260px; }
+  .ch-form__piezas { grid-template-columns: 1fr; }
+}
+
+/* ── Reducir movimiento ── */
+@media (prefers-reduced-motion: reduce) {
+  .ch-carta, .ch-cohete-wrap, .ch-pieza.is-on, .ch-led, .ch-fuego, .ch-instruccion::before, .ch-cosmo .vj-burbuja > span,
+  .ch-viaje__lineas span, .ch-viaje__astro, .ch-viaje__cohete, .ch-viaje__cosmo, .ch-cotizar.is-listo { animation: none !important; }
+  .is-despegue .ch-cohete-wrap { animation: none !important; opacity: 0; }
+  .ch-viaje__cohete { transform: translate(-50%, -50%); }
+  .ch-humo { display: none; }
+}
