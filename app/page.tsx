@@ -1,5 +1,5 @@
-import Home from '@/components/stakeholders/Home';
+import Inicio from '@/components/stakeholders/inicio/Inicio';
 
 export default function HomePage() {
-  return <Home />;
+  return <Inicio />;
 }
