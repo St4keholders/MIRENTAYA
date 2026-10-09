@@ -312,6 +312,7 @@ html.vj-snap { scroll-snap-type: y mandatory; }
   background: rgba(12,12,18,.98); border-right: 1px solid rgba(59,110,255,.55); border-bottom: 1px solid rgba(59,110,255,.55);
   transform: rotate(45deg);
 }
+.vj-burbuja.vj-burbuja--on > span { opacity: 1; transform: none; }
 .vj-at-suelo {
   position: absolute; left: -12%; right: -12%; bottom: 0; height: 24%; border-radius: 50% 50% 0 0 / 38% 38% 0 0;
   background:
