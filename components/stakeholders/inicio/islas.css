@@ -1,0 +1,95 @@
+/* ============================================================
+   ISLAS VIVAS · animaciones de la vida de cada sede
+   ============================================================ */
+
+.isla { display: block; overflow: visible; }
+.isla * { transform-box: fill-box; }
+
+/* recorridos rectos, en bucle y de ida y vuelta */
+.isla .iv-tramo,
+.isla .iv-vaiven { transform-box: view-box; transform-origin: 0 0; }
+.isla .iv-tramo { animation: iv-tramo var(--d, 6s) linear var(--dl, 0s) infinite; }
+.isla .iv-vaiven { animation: iv-vaiven var(--d, 6s) ease-in-out var(--dl, 0s) infinite alternate; }
+@keyframes iv-tramo {
+  0% { transform: translate(var(--ax), var(--ay)); opacity: 0; }
+  6%, 92% { opacity: 1; }
+  100% { transform: translate(var(--bx), var(--by)); opacity: 0; }
+}
+@keyframes iv-vaiven {
+  0%, 8% { transform: translate(var(--ax), var(--ay)); }
+  92%, 100% { transform: translate(var(--bx), var(--by)); }
+}
+
+/* recorridos curvos */
+.isla .iv-ruta {
+  offset-rotate: 0deg; offset-anchor: 0 0; transform-box: view-box;
+  animation: iv-ruta var(--d, 10s) linear var(--dl, 0s) infinite;
+}
+@keyframes iv-ruta { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+
+/* caminar */
+.isla .iv-paso { animation: iv-paso .5s ease-in-out infinite alternate; }
+@keyframes iv-paso { to { transform: translateY(-.5px); } }
+.isla .iv-pierna { transform-origin: 50% 0; animation: iv-pierna .5s ease-in-out infinite alternate; }
+.isla .iv-pierna--b { animation-direction: alternate-reverse; }
+@keyframes iv-pierna { from { transform: rotate(-22deg); } to { transform: rotate(22deg); } }
+
+/* ventanas que se apagan y se encienden */
+.isla .iv-ventana { animation: iv-ventana 11s steps(1) var(--dl, 0s) infinite; }
+@keyframes iv-ventana { 0%, 62% { opacity: .9; } 63%, 82% { opacity: .15; } 83%, 100% { opacity: .9; } }
+.isla .iv-luz { animation: iv-luz 9s ease-in-out var(--dl, 0s) infinite; }
+@keyframes iv-luz { 0%, 40% { opacity: 0; } 50%, 90% { opacity: .95; } 100% { opacity: 0; } }
+
+.isla .isla-farol { animation: iv-farol 3.2s ease-in-out infinite alternate; }
+@keyframes iv-farol { from { opacity: .75; } to { opacity: 1; } }
+.isla .iv-baliza { animation: iv-baliza 1.6s steps(1) var(--dl, 0s) infinite; }
+@keyframes iv-baliza { 0%, 55% { opacity: 1; } 56%, 100% { opacity: .15; } }
+.isla .iv-semaforo { animation: iv-semaforo 6s steps(1) infinite; }
+.isla .iv-semaforo--b { animation-delay: -3s; }
+@keyframes iv-semaforo { 0%, 49% { opacity: 1; } 50%, 100% { opacity: .18; } }
+
+/* naturaleza */
+.isla .iv-mecer { transform-origin: 50% 100%; animation: iv-mecer 4.6s ease-in-out var(--dl, 0s) infinite alternate; }
+@keyframes iv-mecer { from { transform: rotate(-2.5deg); } to { transform: rotate(2.5deg); } }
+.isla .iv-flotar { animation: iv-flotar var(--d, 4s) ease-in-out var(--dl, 0s) infinite alternate; }
+@keyframes iv-flotar { from { transform: translateY(-1.5px); } to { transform: translateY(1.5px); } }
+.isla .iv-onda { transform-origin: 50% 50%; animation: iv-onda 3.9s ease-out var(--dl, 0s) infinite; }
+@keyframes iv-onda { from { transform: scale(.2); opacity: .9; } to { transform: scale(2.4); opacity: 0; } }
+.isla .iv-chorro { animation: iv-chorro 1s ease-in-out var(--dl, 0s) infinite alternate; }
+@keyframes iv-chorro { from { opacity: .5; transform: scaleY(.85); transform-origin: 50% 100%; } to { opacity: 1; transform: scaleY(1.1); transform-origin: 50% 100%; } }
+.isla .iv-humo { transform-origin: 50% 50%; animation: iv-humo var(--d, 4s) ease-out var(--dl, 0s) infinite; }
+@keyframes iv-humo {
+  0% { transform: translate(0, 0) scale(.4); opacity: 0; }
+  15% { opacity: .75; }
+  100% { transform: translate(10px, -34px) scale(2.2); opacity: 0; }
+}
+.isla .iv-aleteo { animation: iv-aleteo .35s ease-in-out infinite alternate; transform-origin: 50% 50%; }
+@keyframes iv-aleteo { from { transform: scaleY(1); } to { transform: scaleY(.4); } }
+.isla .iv-flor { transform-origin: 50% 50%; animation: iv-flor 3s ease-in-out var(--dl, 0s) infinite alternate; }
+@keyframes iv-flor { from { transform: scale(.85); } to { transform: scale(1.15); } }
+.isla .iv-columpio { transform-origin: 50% 0; animation: iv-columpio 2.4s ease-in-out infinite alternate; }
+@keyframes iv-columpio { from { transform: rotate(-14deg); } to { transform: rotate(14deg); } }
+.isla .iv-agua { animation: iv-agua .6s linear infinite; }
+@keyframes iv-agua { to { stroke-dashoffset: -6; } }
+
+/* gente */
+.isla .iv-saluda { transform-origin: 50% 100%; animation: iv-saluda 2.8s ease-in-out infinite; }
+@keyframes iv-saluda { 0%, 70%, 100% { transform: translateY(0); } 78%, 90% { transform: translateY(-1.6px); } }
+.isla .iv-puerta { animation: iv-puerta 4.6s ease-in-out infinite; }
+@keyframes iv-puerta { 0%, 70% { opacity: 0; } 85% { opacity: .9; } 100% { opacity: 0; } }
+.isla .iv-banderin { transform-origin: 0 100%; animation: iv-banderin 10s ease-in-out infinite; }
+@keyframes iv-banderin { 0%, 40% { transform: rotate(80deg); } 50%, 90% { transform: rotate(0); } 100% { transform: rotate(80deg); } }
+
+/* obra */
+.isla .iv-chispa { transform-origin: 50% 50%; animation: iv-chispa 1.3s steps(2) infinite; }
+@keyframes iv-chispa { 0% { opacity: 1; transform: scale(1); } 30% { opacity: .2; transform: scale(.7); } 60% { opacity: 1; transform: scale(1.2) rotate(30deg); } 100% { opacity: 0; } }
+.isla .iv-carrito { transform-box: view-box; animation: iv-carrito 10s ease-in-out infinite; }
+@keyframes iv-carrito { 0%, 10% { transform: translateX(-30px); } 40%, 70% { transform: translateX(9px); } 100% { transform: translateX(-30px); } }
+.isla .iv-cable { transform-origin: 50% 0; animation: iv-cable 10s ease-in-out infinite; }
+@keyframes iv-cable { 0%, 40% { transform: scaleY(1); } 55%, 62% { transform: scaleY(1.75); } 75%, 100% { transform: scaleY(1); } }
+.isla .iv-carga { transform-box: view-box; animation: iv-carga 10s ease-in-out infinite; }
+@keyframes iv-carga { 0%, 40% { transform: translateY(0); } 55%, 62% { transform: translateY(26px); } 75%, 100% { transform: translateY(0); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .isla * { animation: none !important; }
+}
