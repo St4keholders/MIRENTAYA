@@ -1,116 +1,163 @@
 /* ============================================================
-   INICIO · estación orbital
-   Usa tokens de stakeholders.css y la nave/burbuja de viaje.css.
-   El motor (Inicio.tsx) mueve sedes, brazos, luces y lanzaderas.
+   INICIO · mapa de la constelación Stakeholders
+   Usa tokens de stakeholders.css y la nave/burbuja/botones de
+   viaje.css. Sin interfaz de juego: solo el mapa y el espacio.
    ============================================================ */
 
 .ini { position: relative; overflow: hidden; min-height: 100svh; }
-.ini__main {
-  position: relative; z-index: 2; min-height: 100svh; max-width: 1400px; margin: 0 auto; box-sizing: border-box;
-  padding: calc(60px + env(safe-area-inset-top)) var(--pad) calc(min(9vw, 120px) + 64px + env(safe-area-inset-bottom));
-  display: flex; flex-direction: column; align-items: center;
+/* textos encima del mapa */
+.ini__capa {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 20; box-sizing: border-box; pointer-events: none;
+  padding: calc(56px + env(safe-area-inset-top)) var(--pad) 0; display: flex; flex-direction: column; align-items: center;
+  transition: opacity .45s ease;
 }
+.ini__capa > * { pointer-events: auto; }
+.ini--viaje .ini__capa, .ini--zoom .ini__capa { opacity: .14; }
+.ini__capa .home__brand { left: var(--pad); }
+.ini__pie { position: relative; z-index: 2; height: calc(min(9vw, 120px) + 96px); }
 
 /* ── textos pequeños y centrados ── */
-.ini__copy { position: relative; z-index: 60; text-align: center; display: flex; flex-direction: column; align-items: center; max-width: 780px; }
+.ini__copy { position: relative; z-index: 20; text-align: center; display: flex; flex-direction: column; align-items: center; max-width: 780px; }
 .ini__copy h1 { font-size: clamp(1.8rem, min(3.2vw, 5vh), 2.8rem); max-width: 24ch; line-height: 1.05; }
 .ini__copy .lead { font-size: clamp(.92rem, 1.1vw, 1.02rem); line-height: 1.55; font-weight: 400; font-family: var(--body); letter-spacing: normal; color: var(--dim); max-width: 60ch; margin: 10px auto 0; }
 .ini__cta { margin-top: 14px; font-size: clamp(.92rem, 1.15vw, 1rem); padding: 10px 20px; }
 .ini__cta:hover { transform: translateY(-2px); }
 .ini__instruccion {
-  position: relative; z-index: 60; display: inline-flex; align-items: center; gap: 10px; margin: 14px 0 0;
+  position: relative; z-index: 20; display: inline-flex; align-items: center; gap: 10px; margin: 14px 0 0;
   font-family: var(--mono); font-size: 11.5px; letter-spacing: .12em; color: #BFD4FF;
 }
 .ini__instruccion::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--blue-hi); animation: iniPunto 1.6s ease-out infinite; }
 @keyframes iniPunto { 0% { box-shadow: 0 0 0 0 rgba(76,135,255,.7); } 100% { box-shadow: 0 0 0 10px rgba(76,135,255,0); } }
 
-/* ── la escena (de borde a borde) ── */
-.ini3-escena { position: relative; width: 100vw; margin-left: calc(50% - 50vw); height: clamp(470px, 68vh, 720px); }
-.ini3-fondo { position: absolute; inset: -8% -6%; pointer-events: none; transform: translate(calc(var(--mx, 0) * -8px), calc(var(--my, 0) * -6px)); transition: transform .8s ease-out; }
-.ini3-sol { position: absolute; left: 2%; top: -10%; width: 46vw; height: 46vw; border-radius: 50%; background: radial-gradient(circle, rgba(240,185,60,.14), rgba(240,185,60,0) 62%); }
-.ini3-planeta { position: absolute; right: -6vw; bottom: -42%; opacity: .92; }
-.ini3-planeta .pl { --pl: min(58vw, 720px); }
-.ini3-luna { position: absolute; left: 9%; top: 14%; opacity: .8; }
-.ini3-luna .pl { --pl: 46px; }
+/* ============================================================
+   EL MAPA
+   ============================================================ */
+.mp {
+  position: relative; z-index: 2; width: 100%; height: 100vh; height: 100svh; min-height: 640px; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 90%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0, #000 90%, transparent 100%);
+}
 
-.ini3-mundo {
-  position: absolute; inset: 0; transform-origin: 50% var(--oy, 70%);
-  transform: translate(calc(var(--mx, 0) * -16px), calc(var(--my, 0) * -10px));
-  transition: transform 1s cubic-bezier(.65,0,.35,1);
+/* espacio en movimiento constante */
+.mp-espacio { position: absolute; inset: 0; pointer-events: none; }
+.mp-flujo { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mp-nebulosa { position: absolute; border-radius: 50%; mix-blend-mode: screen; will-change: transform; }
+.mp-nebulosa--a { left: -16%; top: -30%; width: 72vw; height: 72vw; background: radial-gradient(circle, rgba(59,110,255,.2), rgba(59,110,255,0) 62%); animation: mpNebA 46s ease-in-out infinite alternate; }
+.mp-nebulosa--b { right: -18%; top: 4%; width: 60vw; height: 60vw; background: radial-gradient(circle, rgba(130,90,220,.13), rgba(130,90,220,0) 62%); animation: mpNebB 64s ease-in-out infinite alternate; }
+.mp-nebulosa--c { left: 24%; bottom: -46%; width: 64vw; height: 64vw; background: radial-gradient(circle, rgba(240,185,60,.09), rgba(240,185,60,0) 60%); animation: mpNebC 56s ease-in-out infinite alternate; }
+@keyframes mpNebA { to { transform: translate(10vw, 6vh) scale(1.12); } }
+@keyframes mpNebB { to { transform: translate(-12vw, 8vh) scale(.9); } }
+@keyframes mpNebC { to { transform: translate(-8vw, -10vh) scale(1.15); } }
+.mp-lejano { position: absolute; will-change: transform; }
+.mp-lejano--a { right: -9vw; bottom: -38%; opacity: .5; animation: mpLejA 120s linear infinite alternate; }
+.mp-lejano--a .pl { --pl: min(48vw, 620px); }
+.mp-lejano--b { left: 9%; top: 16%; opacity: .7; animation: mpLejB 70s linear infinite alternate; }
+.mp-lejano--b .pl { --pl: 52px; }
+.mp-lejano--c { left: 80%; top: 14%; opacity: .75; animation: mpLejC 48s linear infinite alternate; }
+.mp-lejano--c .pl { --pl: 24px; }
+@keyframes mpLejA { to { transform: translate(-6vw, -4vh); } }
+@keyframes mpLejB { to { transform: translate(-7vw, 6vh); } }
+@keyframes mpLejC { to { transform: translate(-14vw, 10vh); } }
+.mp-cometa {
+  position: absolute; top: 0; left: 0; width: 160px; height: 2px; border-radius: 2px; opacity: 0;
+  background: linear-gradient(to left, rgba(255,255,255,.95), rgba(143,179,255,0));
+  animation: mpCometa 11s linear infinite;
 }
-.is-acerca .ini3-mundo { transform: scale(1.12) translateY(-1%); }
+.mp-cometa--b { animation-duration: 17s; animation-delay: -7s; }
+@keyframes mpCometa {
+  0% { opacity: 0; transform: translate(105vw, 4vh) rotate(-158deg); }
+  2% { opacity: 1; }
+  9% { opacity: 0; transform: translate(55vw, 34vh) rotate(-158deg); }
+  100% { opacity: 0; transform: translate(55vw, 34vh) rotate(-158deg); }
+}
 
-/* anillo */
-.ini3-anillo { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.ini3-anillo--atras { z-index: 5; }
-.ini3-anillo--delante { z-index: 21; }
-.ini3-anillo__banda { fill: none; stroke: #1B2347; stroke-width: calc(var(--bw, 200px) * .1); stroke-linecap: round; }
-.ini3-anillo--atras .ini3-anillo__banda { stroke: #10162E; }
-.ini3-anillo__borde { fill: none; stroke: #5D7BE0; stroke-width: 1.6; opacity: .65; transform: translateY(calc(var(--bw, 200px) * -.045)); }
-.ini3-anillo--atras .ini3-anillo__borde { opacity: .3; }
-.ini3-anillo__luces { fill: none; stroke: #8FB3FF; stroke-width: 2.6; stroke-dasharray: 3 22; stroke-linecap: round; }
-.ini3-anillo--atras .ini3-anillo__luces { opacity: .4; }
-.ini3-brazo { stroke: #26305C; stroke-width: 4; stroke-linecap: round; opacity: .85; }
+/* cámara del mapa: el centro del logo queda en el centro de la escena */
+.mp-mapa { position: absolute; left: 50%; top: 60%; width: 0; height: 0; transform-origin: 0 0; transition: transform .6s cubic-bezier(.65,0,.35,1); will-change: transform; }
 
-.ini3-nucleo { position: absolute; left: 0; top: 0; z-index: 20; pointer-events: none; }
-.ini3-nucleo__svg { display: block; width: 100%; height: auto; overflow: visible; }
+/* rutas: la constelación del logo */
+.mp-rutas { position: absolute; overflow: visible; pointer-events: none; }
+.mp-ejes { fill: none; stroke: rgba(191,212,255,.13); stroke-width: .8; stroke-dasharray: 2 4; }
+.mp-ruta { fill: none; stroke: rgba(143,179,255,.5); stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round; }
+.mp-ruta__pulso { fill: none; stroke: #E6EEFF; stroke-width: 2.2; stroke-linecap: round; stroke-dasharray: .035 .965; stroke-dashoffset: .035; animation: mpPulso 7s linear infinite; }
+.mp-ruta__pulso--b { animation-delay: -3.5s; }
+@keyframes mpPulso { to { stroke-dashoffset: -.965; } }
+.mp-menor { animation: mpTitila 3.6s ease-in-out infinite; }
+.mp-menor__halo { fill: rgba(143,179,255,.16); }
+.mp-menor__punto { fill: #DCE6FF; }
+.mp-polvo { fill: #BFD4FF; animation: mpTitila 4.4s ease-in-out infinite; }
+@keyframes mpTitila { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 
-.ini3-lanzadera { position: absolute; left: 0; top: 0; width: 34px; margin: -7px 0 0 -17px; pointer-events: none; will-change: transform; }
-.ini3-lanzadera svg { display: block; width: 100%; height: auto; }
+/* estrellas principales: los servicios */
+.mp-nodo {
+  position: absolute; z-index: 3; width: 64px; height: 64px; margin: -32px 0 0 -32px; padding: 0; border-radius: 50%; cursor: pointer;
+  transition: transform .35s var(--spring), opacity .35s;
+}
+.mp-nodo__halo { position: absolute; inset: -34%; border-radius: 50%; background: radial-gradient(circle, rgba(76,135,255,.5), rgba(76,135,255,0) 64%); animation: mpLatido 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * -.65s); }
+@keyframes mpLatido { 0%, 100% { transform: scale(.85); opacity: .7; } 50% { transform: scale(1.12); opacity: 1; } }
+.mp-nodo__orbita { position: absolute; inset: 5px; border-radius: 50%; border: 1.5px dashed rgba(191,212,255,.6); animation: vjGiro 14s linear infinite; }
+.mp-nodo__nucleo { position: absolute; inset: 21px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #CFE0FF 32%, #4C87FF 68%, #1B2A6B); box-shadow: 0 0 18px 5px rgba(76,135,255,.85); }
+.mp-nodo__destello { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; margin: -24px; fill: #fff; opacity: .85; animation: mpDestello 3.2s ease-in-out infinite; animation-delay: calc(var(--i) * -.8s); }
+@keyframes mpDestello { 0%, 100% { transform: scale(.75) rotate(0deg); opacity: .6; } 50% { transform: scale(1.1) rotate(45deg); opacity: 1; } }
+.mp-nodo__nombre {
+  position: absolute; top: 50%; transform: translateY(-50%); white-space: nowrap; pointer-events: none;
+  font-family: var(--mono); font-weight: 700; font-size: 12px; letter-spacing: .14em; color: #fff;
+  padding: 7px 11px; border-radius: 7px; background: rgba(8,12,30,.72); border: 1px solid rgba(76,135,255,.5);
+  text-shadow: 0 0 8px rgba(143,179,255,.85); box-shadow: 0 0 22px -6px rgba(76,135,255,.7);
+  transition: opacity .3s, background .3s, border-color .3s, box-shadow .3s;
+}
+.mp-nodo--izq .mp-nodo__nombre { right: calc(100% + 4px); }
+.mp-nodo--der .mp-nodo__nombre { left: calc(100% + 4px); }
+.mp-nodo:hover, .mp-nodo:focus-visible, .mp-nodo.is-tour { transform: scale(1.18); }
+.mp-nodo:hover .mp-nodo__nombre, .mp-nodo:focus-visible .mp-nodo__nombre, .mp-nodo.is-tour .mp-nodo__nombre {
+  background: rgba(30,52,130,.9); border-color: #8FB3FF; box-shadow: 0 0 30px -2px rgba(76,135,255,.95);
+}
+.mp-nodo:hover .mp-nodo__orbita, .mp-nodo.is-tour .mp-nodo__orbita { animation-duration: 4s; border-color: #DCE6FF; }
+.mp-nodo:focus-visible { outline: 2px solid var(--blue-hi); outline-offset: 6px; }
+.is-viaje .mp-nodo__nombre, .is-zoom .mp-nodo__nombre { opacity: 0; }
+.is-zoom .mp-nodo { opacity: 0; pointer-events: none; }
+.is-viaje .mp-nodo:not(.is-sel), .is-zoom .mp-nodo:not(.is-sel) { opacity: .25; }
 
-/* ── sedes ── */
-.ini3-sede {
-  position: absolute; left: 0; top: 0; width: var(--bw, 200px); height: calc(var(--bw, 200px) * 230 / 240);
-  transform-origin: 50% 92%; will-change: transform; color: inherit; outline: none;
-  transition: opacity .4s;
-}
-.ini3-sede__arte { position: absolute; inset: 0; display: block; filter: brightness(var(--luz, 1)); transition: filter .4s; cursor: pointer; }
-.ini3-sede__arte .ini-sede__svg { display: block; width: 100%; height: 100%; overflow: visible; transition: transform .4s cubic-bezier(.34,1.42,.5,1), filter .35s; }
-.ini3-sede__letrero {
-  position: absolute; left: 50%; bottom: calc(100% - 4px); z-index: 2; transform: translateX(-50%) scale(var(--inv, 1)); transform-origin: 50% 100%;
-  display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; padding: 6px 10px 6px 12px; border-radius: 8px; cursor: pointer;
-  background: rgba(13,19,48,.9); border: 1px solid rgba(76,135,255,.6); color: #fff;
-  box-shadow: 0 0 18px -4px rgba(76,135,255,.65), inset 0 0 12px rgba(76,135,255,.22);
-  transition: border-color .3s, box-shadow .3s, background .3s;
-}
-.ini3-sede__letrero h2 { margin: 0; font-family: var(--mono); font-weight: 700; font-size: clamp(10.5px, .85vw, 12px); letter-spacing: .13em; line-height: 1.2; text-shadow: 0 0 8px rgba(143,179,255,.85); }
-.ini3-sede__letrero svg { color: #8FB3FF; transition: transform .25s var(--ease); }
-.ini3-sede__info {
-  position: absolute; left: 50%; top: calc(100% + 2px); width: max(230px, 120%); z-index: 2;
-  display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center;
-  opacity: 0; pointer-events: none; transform: translate(-50%, 8px) scale(var(--inv, 1)); transform-origin: 50% 0;
-  transition: opacity .35s, transform .35s;
-}
-.ini3-sede__d { font-size: .86rem; line-height: 1.45; color: #C9CDD6; max-width: 28ch; text-shadow: 0 2px 10px #000; }
-.ini3-sede__entrar {
-  display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; border-radius: 99px;
-  font-family: var(--display); font-weight: 700; font-size: 14.5px; color: #fff;
-  background: var(--blue); border: 1px solid #6C93FF; box-shadow: 0 10px 30px -8px rgba(59,110,255,.9), 0 0 0 4px rgba(59,110,255,.15);
-  animation: iniLlama 2.2s ease-in-out infinite;
-}
-@keyframes iniLlama { 50% { box-shadow: 0 10px 30px -8px rgba(59,110,255,.9), 0 0 0 9px rgba(59,110,255,0); } }
+/* la estrella se vuelve la sede */
+.mp-sede { position: absolute; z-index: 2; opacity: 0; transform: scale(.15); pointer-events: none; transition: opacity .4s ease, transform .55s cubic-bezier(.34,1.3,.5,1); }
+.mp-sede.is-on { opacity: 1; transform: none; }
+.mp-sede .ini-sede__svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 18px rgba(76,135,255,.45)); }
+.mp-sede.is-on .ini-puerta--i { transform: translateX(-100%); transition-delay: .45s; }
+.mp-sede.is-on .ini-puerta--d { transform: translateX(100%); transition-delay: .45s; }
 
-/* la sede del frente muestra su descripción y el botón */
-.ini3-sede.is-frente .ini3-sede__info, .ini3-sede:hover .ini3-sede__info, .ini3-sede:focus-visible .ini3-sede__info {
-  opacity: 1; pointer-events: auto; transform: translate(-50%, 0) scale(var(--inv, 1));
-}
-/* seleccionable: se eleva, brilla y abre la puerta */
-.ini3-sede:hover .ini-sede__svg, .ini3-sede:focus-visible .ini-sede__svg, .ini3-sede.is-destino .ini-sede__svg {
-  transform: translateY(-8px) scale(1.04); filter: drop-shadow(0 0 26px rgba(76,135,255,.6));
-}
-.ini3-sede:hover .ini3-sede__arte, .ini3-sede:focus-visible .ini3-sede__arte, .ini3-sede.is-destino .ini3-sede__arte { filter: brightness(1.08); }
-.ini3-sede:hover .ini3-sede__letrero, .ini3-sede:focus-visible .ini3-sede__letrero, .ini3-sede.is-frente .ini3-sede__letrero {
-  border-color: #8FB3FF; background: rgba(24,40,100,.94); box-shadow: 0 0 30px -2px rgba(76,135,255,.9), inset 0 0 16px rgba(76,135,255,.35);
-}
-.ini3-sede:hover .ini3-sede__letrero svg { transform: translateX(3px); }
-.ini3-sede:focus-visible .ini3-sede__letrero { outline: 2px solid var(--blue-hi); outline-offset: 3px; }
-.ini3-sede.is-otra { opacity: .3; }
-.is-tour .ini3-sede.is-frente .ini-sede__svg { filter: drop-shadow(0 0 26px rgba(76,135,255,.6)); }
+/* Cosmo: "usted está aquí" */
+.mp-nave { position: absolute; left: 0; top: 0; z-index: 5; width: 46px; margin: -27px 0 0 -23px; transform-origin: 50% 96.7%; pointer-events: none; will-change: transform; }
+.mp-nave__cuerpo { position: relative; animation: vjFlotaNave 3s ease-in-out infinite; }
+.mp-burbuja { top: -4px; }
+.mp-burbuja > span { width: max-content; max-width: 240px; }
+/* la burbuja se abre hacia el lado libre de la pantalla */
+.mp-burbuja--der { left: 0; transform: translate(-14%, -100%); }
+.mp-burbuja--der > span::after { left: 14%; }
+.mp-burbuja--izq { left: auto; right: 0; transform: translate(14%, -100%); }
+.mp-burbuja--izq > span::after { left: 86%; }
 
-/* detalles vivos de las sedes */
+/* panel del servicio */
+.mp-panel {
+  position: absolute; z-index: 30; top: 52%; right: max(5vw, calc((100vw - 1240px) / 2)); width: min(410px, 36vw); box-sizing: border-box;
+  padding: 26px 26px 22px; border-radius: 22px;
+  background: rgba(8,11,26,.84); border: 1px solid rgba(76,135,255,.42);
+  box-shadow: 0 30px 80px -30px rgba(59,110,255,.65), inset 0 1px 0 rgba(255,255,255,.05);
+  backdrop-filter: blur(10px);
+  opacity: 0; pointer-events: none; transform: translate(26px, -50%);
+  transition: opacity .35s ease, transform .5s cubic-bezier(.22,1,.36,1);
+}
+.mp-panel.is-on { opacity: 1; pointer-events: auto; transform: translate(0, -50%); transition-delay: .2s; }
+.mp-panel__titulo { margin: 0; font-family: var(--mono); font-weight: 700; font-size: 12.5px; letter-spacing: .16em; color: #CFE0FF; text-shadow: 0 0 10px rgba(76,135,255,.7); }
+.mp-panel__linea { margin: 12px 0 0; font-family: var(--display); font-weight: 600; font-size: clamp(1.08rem, 1.4vw, 1.25rem); line-height: 1.38; letter-spacing: -.015em; color: #fff; }
+.mp-panel__detalle { margin: 10px 0 0; font-size: .92rem; line-height: 1.5; color: var(--dim); }
+.mp-panel__botones { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+.mp-panel__volver {
+  padding: 13px 20px; border-radius: 99px; font-family: var(--display); font-weight: 600; font-size: 14.5px; color: #fff;
+  border: 1px solid var(--line); background: transparent; transition: border-color .2s, background .2s;
+}
+.mp-panel__volver:hover { border-color: rgba(255,255,255,.4); background: rgba(255,255,255,.04); }
+
+/* ── detalles vivos de las sedes (Sedes.tsx) ── */
 .ini-puerta { transform-box: fill-box; transition: transform .45s cubic-bezier(.22,1,.36,1); }
-.ini3-sede:hover .ini-puerta--i, .ini3-sede:focus-visible .ini-puerta--i, .is-destino .ini-puerta--i { transform: translateX(-100%); }
-.ini3-sede:hover .ini-puerta--d, .ini3-sede:focus-visible .ini-puerta--d, .is-destino .ini-puerta--d { transform: translateX(100%); }
 .ini-baliza { animation: iniBaliza 1.6s ease-in-out infinite; }
 @keyframes iniBaliza { 50% { opacity: .35; } }
 .ini-baliza__halo { transform-box: fill-box; transform-origin: center; animation: iniHalo 1.6s ease-out infinite; }
@@ -125,22 +172,8 @@
 .ini-gancho { transform-box: view-box; transform-origin: 160px 36px; animation: iniGancho 4s ease-in-out infinite; }
 @keyframes iniGancho { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
 
-/* ── nave de Cosmo ── */
-.ini3-nave { position: absolute; left: 0; top: 0; z-index: 40; transform-origin: 0 0; will-change: transform; pointer-events: none; }
-.ini__nave-cuerpo { animation: vjFlotaNave 3s ease-in-out infinite; }
-.ini__nave-cuerpo.is-aterriza { animation: none; }
-.ini__nave-cuerpo.is-aterriza .nv-patas { opacity: 1; transform: scaleY(1); transition: transform .25s cubic-bezier(.34,1.42,.5,1), opacity .15s; }
-.ini3-burbuja { top: -2px; }
-.ini3-burbuja > span { white-space: nowrap; }
-
-/* ── primer plano: asteroides ── */
-.ini3-cerca { position: absolute; inset: 0; z-index: 50; pointer-events: none; overflow: hidden; transform: translate(calc(var(--mx, 0) * -40px), calc(var(--my, 0) * -24px)); transition: transform .8s ease-out; }
-.ini3-roca { position: absolute; left: 0; filter: blur(1.4px); opacity: .9; }
-.ini3-roca--a { top: 72%; animation: iniDeriva 80s linear infinite; animation-delay: -30s; }
-.ini3-roca--a .pl { --pl: 64px; }
-.ini3-roca--b { top: 10%; animation: iniDeriva 60s linear infinite reverse; animation-delay: -12s; }
-.ini3-roca--b .pl { --pl: 30px; }
-@keyframes iniDeriva { from { transform: translateX(-12vw) rotate(0deg); } to { transform: translateX(112vw) rotate(220deg); } }
+.is-zoom .mp-nave .nv-patas { opacity: 1; transform: scaleY(1); transition: transform .25s cubic-bezier(.34,1.42,.5,1) .3s, opacity .15s .3s; }
+.is-zoom .mp-nave__cuerpo { animation: none; }
 
 /* ── constelación STAKEHOLDERS ── */
 .ini-constelacion {
@@ -153,27 +186,31 @@
 
 /* ── móvil ── */
 @media (max-width: 699px) {
-  .ini__main { padding-top: calc(70px + env(safe-area-inset-top)); padding-bottom: calc(12vw + 70px + env(safe-area-inset-bottom)); }
+  .ini__capa { padding-top: calc(66px + env(safe-area-inset-top)); }
+  .ini__pie { height: calc(12vw + 96px); }
   .ini__copy h1 { font-size: clamp(1.7rem, 7.4vw, 2.2rem); }
   .ini__copy .lead { font-size: .9rem; }
   .ini__instruccion { font-size: 10.5px; }
-  .ini3-escena { height: clamp(420px, 58vh, 500px); margin-top: 6px; }
-  .ini3-sede__letrero { padding: 5px 7px; gap: 5px; }
-  .ini3-sede__letrero h2 { font-size: 9px; letter-spacing: .08em; }
-  .ini3-sede__info { width: 210px; }
-  .ini3-sede__d { font-size: .78rem; }
-  .ini3-sede__entrar { font-size: 13.5px; padding: 8px 18px; }
-  .ini3-planeta { right: -30vw; bottom: -18%; }
-  .ini3-planeta .pl { --pl: 100vw; }
-  .ini3-burbuja { left: calc(100% + 8px); top: 34%; transform: translateY(-50%); }
-  .ini3-burbuja > span { white-space: nowrap; transform-origin: 0 50%; }
-  .ini3-burbuja > span::after { left: -1px; bottom: auto; top: 50%; margin: -5.5px 0 0 -5px; transform: rotate(135deg); }
-  .ini3-sede__letrero h2 { font-size: 8.5px; letter-spacing: .06em; }
+  .mp { min-height: 700px; }
+  .mp-nodo { width: 52px; height: 52px; margin: -26px 0 0 -26px; }
+  .mp-nodo__nucleo { inset: 17px; }
+  .mp-nodo__destello { width: 38px; height: 38px; margin: -19px; }
+  .mp-nodo__nombre { font-size: 9px; letter-spacing: .06em; padding: 4px 6px; top: calc(100% + 2px); transform: translateX(-50%); white-space: normal; width: max-content; max-width: 104px; text-align: center; line-height: 1.25; }
+  .mp-nodo--izq .mp-nodo__nombre, .mp-nodo--der .mp-nodo__nombre { left: 50%; right: auto; }
+  .mp-panel { top: auto; bottom: 14px; left: 14px; right: 14px; width: auto; padding: 18px; transform: translateY(24px); }
+  .mp-panel.is-on { transform: none; }
+  .mp-panel__linea { font-size: 1rem; }
+  .mp-panel__detalle { font-size: .84rem; }
+  .mp-panel__botones { margin-top: 14px; }
+  .mp-panel__botones .vj-cta { flex: 1; }
+  .mp-lejano--a .pl { --pl: 90vw; }
   .ini-constelacion { left: 3%; width: 94%; bottom: calc(50px + env(safe-area-inset-bottom)); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ini-baliza, .ini-baliza__halo, .ini-luz, .ini-pantalla, .ini-propulsor, .ini-pista__luz, .ini-gancho, .ini-constelacion__estrella,
-  .ini__instruccion::before, .ini__nave-cuerpo, .ini3-roca, .ini3-sede__entrar { animation: none !important; }
-  .ini3-mundo, .ini3-fondo, .ini3-cerca { transition: none; }
+  .mp-nebulosa, .mp-lejano, .mp-cometa, .mp-ruta__pulso, .mp-menor, .mp-polvo, .mp-nodo__halo, .mp-nodo__orbita, .mp-nodo__destello,
+  .mp-nave__cuerpo, .ini-baliza, .ini-baliza__halo, .ini-luz, .ini-pantalla, .ini-propulsor, .ini-pista__luz, .ini-gancho,
+  .ini-constelacion__estrella, .ini__instruccion::before { animation: none !important; }
+  .mp-cometa { display: none; }
+  .mp-mapa, .mp-sede, .mp-panel { transition: none; }
 }

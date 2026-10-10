@@ -1,394 +1,389 @@
 'use client';
 
 /* ============================================================
-   INICIO · estación orbital de Stakeholders
-   Las cuatro sedes cuelgan de un anillo que gira lento alrededor
-   del núcleo. Profundidad en falso 3D: las de atrás se ven más
-   pequeñas y oscuras. Al hacer clic en una sede, el anillo la
-   trae al frente, la cámara se acerca, la nave de Cosmo sale
-   del núcleo, se acopla en su plataforma y la página cambia.
+   INICIO · mapa de la constelación Stakeholders
+   El mapa es la constelación del logo SH, centrado y quieto; el
+   espacio a su alrededor fluye sin parar. Los cuatro servicios
+   son sus estrellas principales y las líneas del logo, las rutas.
+   La nave de Cosmo marca dónde estás: al escoger un servicio
+   viaja por la ruta, la cámara la sigue y hace zoom, la estrella
+   se vuelve la sede y aparece un panel con Entrar / Volver.
    ============================================================ */
 
-import { Fragment, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import Stars from '../Stars';
 import { Nave } from '../viaje/Nave';
-import { Planeta } from '../viaje/Planeta';
+import { Destello } from '../viaje/Orbita';
 import { Sede, type SedeId } from './Sedes';
-import { Nucleo } from './Nucleo';
 import { Constelacion } from './Constelacion';
+import { Espacio } from './Espacio';
 import '@/app/stakeholders.css';
 import '@/app/servicios.css';
 import '@/components/stakeholders/viaje/planeta.css';
 import '@/components/stakeholders/viaje/viaje.css';
 import './inicio.css';
 
-const SEDES: Array<{ id: SedeId; href: string; t: string; d: string; pad: [number, number] }> = [
-  { id: 'contabilidad', href: '/contabilidad', t: 'SERVICIO DE CONTABILIDAD', d: 'Libros, impuestos y estados financieros de tu empresa.', pad: [82, 60] },
-  { id: 'nomina', href: '/nomina', t: 'SERVICIO DE NÓMINA', d: 'Liquidación, nómina electrónica y seguridad social de tu equipo.', pad: [6.3, 64.3] },
-  { id: 'renta', href: '/renta', t: 'RENTA PERSONA NATURAL', d: 'Descubre si debes declarar y hasta cuándo tienes plazo.', pad: [83, 68.7] },
-  { id: 'personalizado', href: '/personalizado', t: 'SERVICIO PERSONALIZADO', d: 'Trámites y casos puntuales, revisados por un contador.', pad: [9.6, 72.2] },
+/* Vértices de la constelación del logo SH (trazo de la S, de abajo arriba) */
+const NODOS: Array<[number, number]> = [
+  [100, 320], [148, 360], [232, 355], [280, 305], [256, 235], [200, 200], [144, 165], [120, 95], [168, 45], [252, 40], [300, 80],
+];
+const CASA = 5; // centro del logo: "usted está aquí"
+const S_PATH = `M${NODOS.map((p) => p.join(',')).join(' L')}`;
+const EJES = 'M100,80 V320 M300,80 V320 M80,80 H120 M80,320 H120 M280,80 H320 M280,320 H320 M100,200 H300';
+const MENORES = [[60, 140], [340, 250], [210, 110], [70, 380], [330, 370], [180, 280], [40, 40], [360, 20], [230, 160], [320, 180]];
+
+const SERVICIOS: Array<{
+  id: SedeId; nodo: number; href: string; t: string; lado: 'izq' | 'der';
+  linea: string; detalle: string; tour: string; pad: [number, number];
+}> = [
+  {
+    id: 'contabilidad', nodo: 0, href: '/contabilidad', t: 'SERVICIO DE CONTABILIDAD', lado: 'izq', pad: [82, 60],
+    linea: 'Un contador y un auxiliar asignados a tu empresa llevan tus libros, presentan tus impuestos y se reúnen contigo cada semana.',
+    detalle: 'Adentro encuentras cómo trabajamos y los planes, y puedes agendar tu diagnóstico o hablar con un contador.',
+    tour: 'Si quieres conocer nuestros servicios de contabilidad, este es tu planeta.',
+  },
+  {
+    id: 'nomina', nodo: 3, href: '/nomina', t: 'SERVICIO DE NÓMINA', lado: 'der', pad: [6.3, 64.3],
+    linea: 'Liquidamos la nómina de tu equipo cada quincena y lo mantenemos afiliado a salud, pensión, ARL y caja de compensación.',
+    detalle: 'Adentro ves cómo funciona cada quincena y puedes agendar tu cita o hablar con un contador.',
+    tour: 'Si quieres conocer nuestros servicios de nómina, este es tu planeta.',
+  },
+  {
+    id: 'renta', nodo: 6, href: '/renta', t: 'RENTA PERSONA NATURAL', lado: 'izq', pad: [83, 68.7],
+    linea: 'Te ayudamos con tu declaración de renta: descubre si este año te toca declarar y hasta cuándo tienes plazo.',
+    detalle: 'Adentro haces un test corto y, si lo necesitas, agendas tu cita con un contador.',
+    tour: 'Si eres persona natural y quieres saber si debes declarar renta, este es tu planeta.',
+  },
+  {
+    id: 'personalizado', nodo: 10, href: '/personalizado', t: 'SERVICIO PERSONALIZADO', lado: 'der', pad: [9.6, 72.2],
+    linea: 'Junta en un solo servicio lo que tu empresa necesita: contabilidad, nómina, contador acompañante e infraestructura tecnológica.',
+    detalle: 'Adentro armas tu servicio pieza por pieza y agendas tu cita con un contador.',
+    tour: 'Si quieres un servicio hecho a tu medida, este es tu planeta.',
+  },
 ];
 
 const TITULO = 'Un área contable completa, fuera de tu oficina';
-const N = SEDES.length;
-const PASO = (Math.PI * 2) / N;
-const TAU = Math.PI * 2;
-const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const SALUDO = '¿Qué servicio quieres conocer?';
 const quieto = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/** Ángulo del anillo que deja la sede i al frente, por el camino más corto */
-const anguloFrente = (i: number, actual: number) => {
-  const base = -i * PASO;
-  const k = Math.round((actual - base) / TAU);
-  return base + k * TAU;
+/** Vértices por los que pasa la nave para ir de un nodo a otro siguiendo la ruta */
+const ruta = (a: number, b: number) => {
+  const r: number[] = [];
+  const paso = b >= a ? 1 : -1;
+  for (let i = a; i !== b + paso; i += paso) r.push(i);
+  return r;
 };
 
+type Geo = { W: number; H: number; k: number; movil: boolean; z: number; sw: number; cy: number };
+
 export default function Inicio() {
-  const router = useRouter();
   const [in_, setIn] = useState(false);
-  const [modo, setModo] = useState<'espera' | 'tour' | 'vuelo'>('espera');
-  const [frente, setFrente] = useState(0);
-  const [destino, setDestino] = useState<SedeId | null>(null);
-  const [aterriza, setAterriza] = useState(false);
+  const [geo, setGeo] = useState<Geo>({ W: 1200, H: 800, k: 1.4, movil: false, z: 3.1, sw: 280, cy: 520 });
+  const [fase, setFase] = useState<'mapa' | 'viaje' | 'zoom' | 'tour'>('mapa');
+  const [sel, setSel] = useState<number | null>(null);
+  const [burbuja, setBurbuja] = useState(SALUDO);
+  const [impulso, setImpulso] = useState(0);
 
   const escenaRef = useRef<HTMLDivElement>(null);
+  const capaRef = useRef<HTMLDivElement>(null);
+  const mapaRef = useRef<HTMLDivElement>(null);
   const naveRef = useRef<HTMLDivElement>(null);
-  const nucleoRef = useRef<HTMLDivElement>(null);
-  const atrasRef = useRef<SVGSVGElement>(null);
-  const delanteRef = useRef<SVGSVGElement>(null);
-  const sedesRef = useRef<Array<HTMLAnchorElement | null>>([]);
-  const lanzaderasRef = useRef<Array<HTMLDivElement | null>>([]);
-  const ctl = useRef({
-    phi: Math.PI / 4, giro: null as null | { de: number; a: number; t0: number; dur: number; fin?: () => void },
-    pausa: false, ocupado: false, frente: -1,
-    geo: { W: 0, H: 0, cx: 0, cy: 0, R: 0, ry: 0, bw: 0, nave: 0 },
-    timers: [] as number[],
-  });
+  const entrarRef = useRef<HTMLAnchorElement>(null);
+  const ctl = useRef({ nodo: CASA, ocupado: false, timers: [] as number[], geo });
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setIn(true));
     return () => cancelAnimationFrame(id);
   }, []);
 
-  /* ── motor de la estación ── */
+  /* medidas del mapa */
   useEffect(() => {
-    const C = ctl.current;
-    const escena = escenaRef.current;
-    if (!escena) return;
-    const reduce = quieto();
-
     const medir = () => {
-      const W = escena.offsetWidth, H = escena.offsetHeight;
+      const el = escenaRef.current;
+      if (!el) return;
+      const W = el.offsetWidth, H = el.offsetHeight;
       const movil = W < 700;
-      const R = movil ? W * 0.34 : Math.min(W * 0.33, 500);
-      const ry = R * (movil ? 0.5 : 0.27);
-      const bw = movil ? Math.min(112, W * 0.29) : Math.max(160, Math.min(240, W * 0.165));
-      C.geo = { W, H, cx: W / 2, cy: H * (movil ? 0.5 : 0.6), R, ry, bw, nave: movil ? 76 : 120 };
-      escena.style.setProperty('--bw', `${bw}px`);
-      escena.style.setProperty('--oy', `${C.geo.cy + ry}px`);
-      const nuc = nucleoRef.current;
-      if (nuc) {
-        const nw = R * (movil ? 0.5 : 0.36);
-        nuc.style.width = `${nw}px`;
-        // el collar (50%, 75.3%) queda en el centro del anillo
-        nuc.style.transform = `translate(${C.geo.cx - nw / 2}px, ${C.geo.cy - nw * 1.5 * 0.753}px)`;
-      }
-      const naveEl = naveRef.current;
-      if (naveEl) naveEl.style.width = `${C.geo.nave}px`;
-      for (const svg of [atrasRef.current, delanteRef.current]) svg?.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      // el mapa ocupa el espacio que queda debajo de los textos, centrado ahí
+      const arriba = (capaRef.current?.offsetHeight ?? H * 0.35) + (movil ? 18 : 26);
+      const libre = Math.max(260, H - arriba - (movil ? 26 : 34));
+      const cy = arriba + libre / 2;
+      const k = Math.min((W * (movil ? 0.84 : 0.72)) / 300, (libre * 0.96) / 330);
+      const sw = movil ? Math.min(210, W * 0.52) : Math.min(300, W * 0.24);
+      const g = { W, H, k, movil, z: movil ? 2.5 : 3.1, sw, cy };
+      ctl.current.geo = g;
+      setGeo(g);
     };
-
-    const elipse = (lado: 'atras' | 'delante') => {
-      const { cx, cy, R, ry } = C.geo;
-      return lado === 'atras'
-        ? `M${cx - R},${cy} A${R},${ry} 0 0 1 ${cx + R},${cy}`
-        : `M${cx + R},${cy} A${R},${ry} 0 0 1 ${cx - R},${cy}`;
-    };
-
-    const posNaveReposo = () => {
-      const { cx, cy, R, nave } = C.geo;
-      const nw = R * (C.geo.W < 700 ? 0.5 : 0.36);
-      const topNucleo = cy - nw * 1.5 * 0.753;
-      // Cosmo espera junto a la cúpula del núcleo (en celular, arriba a la izquierda)
-      if (C.geo.W < 700) return { x: 14, y: 4, s: 1 };
-      return { x: cx + nw * 0.34, y: topNucleo + nw * 0.12 - nave * 0.6, s: 1 };
-    };
-
-    let raf = 0, last = performance.now();
-    const frame = (now: number) => {
-      const dt = Math.min(50, now - last);
-      last = now;
-      const { cx, cy, R, ry, bw } = C.geo;
-
-      // giro: animado hacia una sede o lento en reposo
-      if (C.giro) {
-        if (C.giro.t0 < 0) C.giro.t0 = now;
-        const t = Math.min(1, (now - C.giro.t0) / C.giro.dur);
-        C.phi = C.giro.de + (C.giro.a - C.giro.de) * easeInOut(t);
-        if (t >= 1) { const fin = C.giro.fin; C.giro = null; fin?.(); }
-      } else if (!C.pausa && !reduce && !C.ocupado) {
-        C.phi -= (TAU / 110000) * dt;
-      }
-
-      // sedes en el anillo
-      let mejor = 0, dMax = -2;
-      SEDES.forEach((_, i) => {
-        const el = sedesRef.current[i];
-        if (!el) return;
-        const th = C.phi + i * PASO;
-        const d = Math.cos(th);
-        const x = cx + R * Math.sin(th);
-        const y = cy + ry * d;
-        const s = 0.6 + 0.4 * ((d + 1) / 2);
-        const h = bw * (230 / 240);
-        el.style.transform = `translate3d(${x - bw / 2}px, ${y - h * 0.92}px, 0) scale(${s.toFixed(3)})`;
-        el.style.zIndex = String(d > 0.02 ? 22 + Math.round(d * 8) : 12 + Math.round((d + 1) * 3.5));
-        el.style.setProperty('--inv', (1 / Math.pow(s, 0.75)).toFixed(3));
-        const luz = (0.5 + 0.5 * ((d + 1) / 2)).toFixed(2);
-        if (el.dataset.luz !== luz) { el.dataset.luz = luz; el.style.setProperty('--luz', luz); }
-        if (d > dMax) { dMax = d; mejor = i; }
-      });
-      if (mejor !== C.frente) { C.frente = mejor; setFrente(mejor); }
-
-      // anillo: luces que corren con el giro, y brazos hacia cada sede
-      const off = String((-C.phi * R).toFixed(1));
-      atrasRef.current?.querySelectorAll<SVGPathElement>('.ini3-anillo__luces').forEach((p) => p.setAttribute('stroke-dashoffset', off));
-      delanteRef.current?.querySelectorAll<SVGPathElement>('.ini3-anillo__luces').forEach((p) => p.setAttribute('stroke-dashoffset', off));
-      const brazos = atrasRef.current?.querySelectorAll<SVGLineElement>('.ini3-brazo');
-      brazos?.forEach((b, i) => {
-        const th = C.phi + i * PASO + PASO / 2;
-        b.setAttribute('x1', String(cx)); b.setAttribute('y1', String(cy));
-        b.setAttribute('x2', (cx + R * Math.sin(th)).toFixed(1)); b.setAttribute('y2', (cy + ry * Math.cos(th)).toFixed(1));
-      });
-
-      // lanzaderas que dan la vuelta al anillo más rápido
-      lanzaderasRef.current.forEach((el, k) => {
-        if (!el) return;
-        const th = (reduce ? 0 : now / (k ? 9000 : 13000)) * (k ? -TAU : TAU) + k * 2;
-        const d = Math.cos(th);
-        const x = cx + R * 1.08 * Math.sin(th);
-        const y = cy + ry * 1.08 * d - 26;
-        el.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${(0.55 + 0.45 * ((d + 1) / 2)).toFixed(3)}) scaleX(${Math.cos(th) * (k ? -1 : 1) > 0 ? 1 : -1})`;
-        el.style.zIndex = String(d > 0 ? 31 : 6);
-        el.style.opacity = String(0.55 + 0.45 * ((d + 1) / 2));
-      });
-
-      // la nave de Cosmo espera sobre el núcleo
-      const nave = naveRef.current;
-      if (nave) {
-        const p = posNaveReposo();
-        nave.style.transform = `translate3d(${p.x}px, ${p.y}px, 0)`;
-      }
-      raf = requestAnimationFrame(frame);
-    };
-
     medir();
-    // trazos del anillo
-    for (const [svg, lado] of [[atrasRef.current, 'atras'], [delanteRef.current, 'delante']] as const) {
-      svg?.querySelectorAll<SVGPathElement>('path[data-arco]').forEach((p) => p.setAttribute('d', elipse(lado)));
-    }
-    raf = requestAnimationFrame(frame);
-    const alCambiar = () => {
-      medir();
-      for (const [svg, lado] of [[atrasRef.current, 'atras'], [delanteRef.current, 'delante']] as const) {
-        svg?.querySelectorAll<SVGPathElement>('path[data-arco]').forEach((p) => p.setAttribute('d', elipse(lado)));
-      }
-    };
-    window.addEventListener('resize', alCambiar);
-
-    // paralaje con el mouse
-    const alMover = (e: PointerEvent) => {
-      if (reduce || e.pointerType !== 'mouse') return;
-      const mx = (e.clientX / window.innerWidth) * 2 - 1;
-      const my = (e.clientY / window.innerHeight) * 2 - 1;
-      document.documentElement.style.setProperty('--mx', mx.toFixed(3));
-      document.documentElement.style.setProperty('--my', my.toFixed(3));
-    };
-    window.addEventListener('pointermove', alMover);
-    const timers = C.timers;
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', alCambiar);
-      window.removeEventListener('pointermove', alMover);
-      timers.forEach((t) => window.clearTimeout(t));
-    };
+    window.addEventListener('resize', medir);
+    return () => window.removeEventListener('resize', medir);
   }, []);
 
+  const local = useCallback((n: number): [number, number] => {
+    const [x, y] = NODOS[n];
+    return [(x - 200) * geo.k, (y - 200) * geo.k];
+  }, [geo.k]);
+
   const despues = (ms: number, fn: () => void) => { ctl.current.timers.push(window.setTimeout(fn, ms)); };
+  const limpiar = () => { ctl.current.timers.forEach((t) => window.clearTimeout(t)); ctl.current.timers = []; };
 
-  const girarA = (i: number, dur: number, fin?: () => void) => {
-    const C = ctl.current;
-    const a = anguloFrente(i, C.phi);
-    C.giro = { de: C.phi, a, t0: -1, dur: Math.abs(a - C.phi) < 0.01 ? 1 : dur, fin }; // t0 lo fija el motor
+  /** Mueve la nave en coordenadas del mapa (px locales) */
+  const mover = (puntos: Array<[number, number, number]>, dur: number) => {
+    const nave = naveRef.current;
+    if (!nave) return;
+    const fin = puntos[puntos.length - 1];
+    const tf = (p: [number, number, number]) => `translate(${p[0]}px, ${p[1]}px) scale(${p[2]})`;
+    if (quieto() || dur < 20) { nave.style.transform = tf(fin); return; }
+    const a = nave.animate([{ transform: nave.style.transform || tf(puntos[0]) }, ...puntos.map((p) => ({ transform: tf(p) }))], { duration: dur, easing: 'cubic-bezier(.45,0,.25,1)' });
+    nave.style.transform = tf(fin);
+    a.onfinish = () => a.cancel();
   };
 
-  /** Clic en una sede: al frente, acercamiento, Cosmo se acopla y entramos */
-  const entrar = (i: number) => {
+  const camara = (z: number, n: number | null, dur: number) => {
+    const m = mapaRef.current;
+    if (!m) return;
+    const g = ctl.current.geo;
+    let dx = 0, dy = 0;
+    if (n !== null) {
+      const [x, y] = NODOS[n];
+      const tx = g.movil ? g.W * 0.5 : g.W * 0.33;
+      const ty = g.movil ? g.H * 0.34 : g.H * 0.52;
+      dx = tx - g.W / 2 - (x - 200) * g.k * z;
+      dy = ty - g.cy - (y - 200) * g.k * z;
+    }
+    m.style.transitionDuration = `${quieto() ? 0 : dur}ms`;
+    m.style.transform = `translate(${dx}px, ${dy}px) scale(${z})`;
+  };
+
+  /* la nave arranca en el centro del logo */
+  useEffect(() => {
+    const nave = naveRef.current;
+    if (!nave) return;
+    const [x, y] = local(ctl.current.nodo);
+    if (fase === 'mapa' || fase === 'tour') nave.style.transform = `translate(${x}px, ${y}px) scale(1)`;
+    // al cambiar el tamaño con zoom activo, recoloca la cámara
+    if (fase === 'zoom' && sel !== null) camara(geo.z, SERVICIOS[sel].nodo, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [geo]);
+
+  /** Clic en un servicio: Cosmo viaja por la ruta, la cámara lo sigue y hace zoom */
+  const escoger = (i: number) => {
     const C = ctl.current;
-    if (C.ocupado) return;
-    const s = SEDES[i];
-    if (quieto()) { router.push(s.href); return; }
+    if (C.ocupado && fase !== 'tour') return;
+    limpiar();
     C.ocupado = true;
-    setModo('vuelo');
-    setDestino(s.id);
-    girarA(i, 850, () => {
-      const nave = naveRef.current;
-      if (!nave) { router.push(s.href); return; }
-      // en coordenadas de la escena: la sede quedó al frente (escala 1)
-      const { cx, cy, ry, bw, nave: nw } = C.geo;
-      const h = bw * (230 / 240);
-      const px = cx - bw / 2 + (bw * s.pad[0]) / 100;
-      const py = cy + ry - h * 0.92 + (h * s.pad[1]) / 100;
-      const sc = Math.max(0.3, Math.min(0.7, (bw * 0.3) / nw));
-      const hN = nw * 0.6;
-      const desde = nave.style.transform;
-      const x2 = px - (nw * sc) / 2, y2 = py - hN * sc * 0.967;
-      const m = nave.style.transform.match(/translate3d\(([-\d.]+)px, ([-\d.]+)px/);
-      const x0 = m ? Number(m[1]) : x2, y0 = m ? Number(m[2]) : y2;
-      nave.animate(
-        [
-          { transform: desde },
-          { transform: `translate3d(${(x0 + x2) / 2}px, ${Math.min(y0, y2) - 50}px, 0) scale(${(1 + sc) / 2}) rotate(${x2 > x0 ? 10 : -10}deg)`, offset: 0.5 },
-          { transform: `translate3d(${x2}px, ${y2}px, 0) scale(${sc})` },
-        ],
-        { duration: 820, easing: 'cubic-bezier(.45,0,.25,1)', fill: 'forwards' },
-      );
-      despues(650, () => setAterriza(true));
-      despues(1050, () => router.push(s.href));
+    const s = SERVICIOS[i];
+    const camino = ruta(C.nodo, s.nodo);
+    let largo = 0;
+    for (let j = 1; j < camino.length; j++) {
+      const [ax, ay] = NODOS[camino[j - 1]], [bx, by] = NODOS[camino[j]];
+      largo += Math.hypot(bx - ax, by - ay);
+    }
+    const tViaje = quieto() ? 0 : Math.min(800, 260 + largo * 1.6);
+    setSel(i);
+    setFase('viaje');
+    setImpulso(1);
+    mover(camino.map((n) => [...local(n), 1] as [number, number, number]), tViaje);
+    camara(geo.z, s.nodo, tViaje + 520);
+    C.nodo = s.nodo;
+    despues(tViaje, () => {
+      // se acopla en la plataforma de la sede
+      const [x, y] = local(s.nodo);
+      const w = geo.sw / geo.z, h = w * (230 / 240);
+      const px = x - w / 2 + (w * s.pad[0]) / 100;
+      const py = y - h / 2 + (h * s.pad[1]) / 100 - 9 / geo.z;
+      mover([[px, py, 0.62]], 360);
+      setFase('zoom');
+      setImpulso(0);
     });
+    despues(tViaje + 560, () => { C.ocupado = false; entrarRef.current?.focus({ preventScroll: true }); });
   };
 
-  /** "Elige lo que necesitas resolver": el anillo muestra cada sede al frente */
-  const mostrar = () => {
+  const volver = useCallback(() => {
+    const C = ctl.current;
+    if (sel === null) return;
+    limpiar();
+    C.ocupado = true;
+    setFase('mapa');
+    camara(1, null, 650);
+    mover([[...local(C.nodo), 1]], 420);
+    despues(650, () => { C.ocupado = false; setSel(null); });
+  }, [sel, local]);
+
+  useEffect(() => {
+    const alTeclear = (e: KeyboardEvent) => { if (e.key === 'Escape' && fase === 'zoom') volver(); };
+    window.addEventListener('keydown', alTeclear);
+    return () => window.removeEventListener('keydown', alTeclear);
+  }, [fase, volver]);
+
+  /** "Elige lo que necesitas resolver": Cosmo recorre los cuatro planetas */
+  const recorrer = () => {
     const C = ctl.current;
     if (C.ocupado) return;
+    if (fase === 'zoom') { volver(); return; }
+    limpiar();
     C.ocupado = true;
-    setModo('tour');
-    const r = quieto();
-    const paso = (k: number) => {
-      if (k >= N) { C.ocupado = false; setModo('espera'); return; }
-      girarA(k, r ? 1 : 700, () => despues(r ? 300 : 650, () => paso(k + 1)));
-    };
-    paso(0);
+    setFase('tour');
+    let t = 0;
+    SERVICIOS.forEach((s, i) => {
+      despues(t, () => {
+        const camino = ruta(C.nodo, s.nodo);
+        mover(camino.map((n) => [...local(n), 1] as [number, number, number]), quieto() ? 0 : 700);
+        C.nodo = s.nodo;
+        setSel(i);
+        setImpulso(1);
+        setBurbuja('');
+      });
+      despues(t + 720, () => { setImpulso(0); setBurbuja(s.tour); });
+      t += 3000;
+    });
+    despues(t, () => {
+      const camino = ruta(C.nodo, CASA);
+      mover(camino.map((n) => [...local(n), 1] as [number, number, number]), quieto() ? 0 : 700);
+      C.nodo = CASA;
+      setSel(null);
+      setBurbuja('');
+    });
+    despues(t + 750, () => { setFase('mapa'); setBurbuja(SALUDO); C.ocupado = false; });
   };
+
+  useEffect(() => () => limpiar(), []);
+
+  const activo = sel !== null ? SERVICIOS[sel] : null;
+  const verBurbuja = in_ && burbuja !== '' && (fase === 'mapa' || fase === 'tour');
+  const xNodo = NODOS[sel !== null ? SERVICIOS[sel].nodo : CASA][0];
+  const ladoBurbuja = xNodo < 200 ? 'der' : xNodo > 200 ? 'izq' : 'centro';
 
   return (
-    <div className="ini">
+    <div className={`ini ini--${fase}`}>
       <Stars />
-      <main className="ini__main ini3">
-        <span className="home__brand">STAKEHOLDERS<i /></span>
+      <section ref={escenaRef} className={`mp is-${fase}`} aria-label="Mapa de servicios">
+        <Espacio impulso={impulso} />
 
-        <div className={`ini__copy ${in_ ? 'is-in' : ''}`}>
-          <h1 aria-label={TITULO}>
-            {TITULO.split(' ').map((w, i) => (
-              <Fragment key={i}>
-                <span className="w" aria-hidden="true">
-                  <span className="wi" style={{ transitionDelay: `${i * 55}ms` }}>{w}</span>
-                </span>{' '}
-              </Fragment>
-            ))}
-          </h1>
-          <h2 className="lead fade" style={{ transitionDelay: '.45s' }}>
-            Contadores públicos que llevan la contabilidad y la nómina de tu empresa. Y si eres persona natural, también te ayudamos con tu declaración de renta.
-          </h2>
-          <div className="fade" style={{ transitionDelay: '.65s' }}>
-            <button type="button" className="home__cta-btn ini__cta" onClick={mostrar}>
-              <span>Elige lo que necesitas resolver</span>
-              <span className="home__cta-arrow" aria-hidden="true">→</span>
-            </button>
-          </div>
-        </div>
+        <div className="mp-mapa" ref={mapaRef} style={{ top: geo.cy }}>
 
-        <p className="ini__instruccion">Escoge una sede y Cosmo te lleva</p>
-
-        <div className={`ini3-escena is-${modo} ${destino ? 'is-acerca' : ''}`} ref={escenaRef} style={{ ['--fx' as string]: '50%' }}>
-          {/* fondo: sol y planeta */}
-          <div className="ini3-fondo" aria-hidden="true">
-            <div className="ini3-sol" />
-            <div className="ini3-planeta"><Planeta v="hogar" giro={160} inclinacion={-18} /></div>
-            <div className="ini3-luna"><Planeta v="piedra" giro={90} /></div>
-          </div>
-
-          <div className="ini3-mundo">
-            <svg className="ini3-anillo ini3-anillo--atras" ref={atrasRef} aria-hidden="true">
-              {SEDES.map((s) => <line key={s.id} className="ini3-brazo" />)}
-              <path data-arco className="ini3-anillo__banda" />
-              <path data-arco className="ini3-anillo__borde" />
-              <path data-arco className="ini3-anillo__luces" />
+            {/* rutas: la constelación del logo */}
+            <svg
+              className="mp-rutas"
+              viewBox="0 0 400 400"
+              style={{ width: 400 * geo.k, height: 400 * geo.k, left: -200 * geo.k, top: -200 * geo.k }}
+              aria-hidden="true"
+            >
+              <path d={EJES} className="mp-ejes" />
+              <path d={S_PATH} className="mp-ruta" />
+              <path d={S_PATH} className="mp-ruta__pulso" pathLength={1} />
+              <path d={S_PATH} className="mp-ruta__pulso mp-ruta__pulso--b" pathLength={1} />
+              {NODOS.map(([x, y], n) => (SERVICIOS.some((s) => s.nodo === n) ? null : (
+                <g key={n} className="mp-menor" style={{ animationDelay: `${n * -0.6}s` }}>
+                  <circle cx={x} cy={y} r="7" className="mp-menor__halo" />
+                  <circle cx={x} cy={y} r={n === CASA ? 3.4 : 2.4} className="mp-menor__punto" />
+                </g>
+              )))}
+              {MENORES.map(([x, y], n) => <circle key={`m${n}`} cx={x} cy={y} r="1.2" className="mp-polvo" style={{ animationDelay: `${n * -0.9}s` }} />)}
             </svg>
 
-            <div className="ini3-nucleo" ref={nucleoRef} aria-hidden="true"><Nucleo /></div>
-
-            <svg className="ini3-anillo ini3-anillo--delante" ref={delanteRef} aria-hidden="true">
-              <path data-arco className="ini3-anillo__banda" />
-              <path data-arco className="ini3-anillo__borde" />
-              <path data-arco className="ini3-anillo__luces" />
-            </svg>
-
-            {[0, 1].map((k) => (
-              <div key={k} className="ini3-lanzadera" ref={(el) => { lanzaderasRef.current[k] = el; }} aria-hidden="true">
-                <svg viewBox="0 0 40 16"><path d="M4,8 Q10,1 26,3 L36,8 L26,13 Q10,15 4,8 Z" fill="#DCE3EF" /><circle cx="24" cy="8" r="2.4" fill="#4C87FF" /><ellipse cx="2" cy="8" rx="6" ry="2.4" fill="#8FB3FF" opacity=".7" /></svg>
-              </div>
-            ))}
-
-            <nav aria-label="Servicios" id="servicios">
-              {SEDES.map((s, i) => (
-                <Link
-                  key={s.id}
-                  href={s.href}
-                  data-sede={s.id}
-                  ref={(el) => { sedesRef.current[i] = el; }}
-                  className={['ini3-sede', frente === i ? 'is-frente' : '', destino === s.id ? 'is-destino' : '', destino && destino !== s.id ? 'is-otra' : ''].join(' ')}
-                  onMouseEnter={() => { ctl.current.pausa = true; }}
-                  onMouseLeave={() => { ctl.current.pausa = false; }}
-                  onFocus={() => { if (!ctl.current.ocupado) girarA(i, 700); }}
-                  onClick={(e) => {
-                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
-                    e.preventDefault();
-                    entrar(i);
-                  }}
+            {/* sedes: aparecen al hacer zoom sobre su estrella */}
+            {SERVICIOS.map((s, i) => {
+              const [x, y] = local(s.nodo);
+              const w = geo.sw / geo.z;
+              return (
+                <div
+                  key={`sede-${s.id}`}
+                  className={`mp-sede ${sel === i && fase === 'zoom' ? 'is-on' : ''}`}
+                  style={{ width: w, height: w * (230 / 240), left: x - w / 2, top: y - (w * (230 / 240)) / 2 }}
+                  aria-hidden="true"
                 >
-                  <span className="ini3-sede__letrero">
-                    <h2>{s.t}</h2>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                  </span>
-                  <span className="ini3-sede__arte"><Sede id={s.id} /></span>
-                  <span className="ini3-sede__info">
-                    <span className="ini3-sede__d">{s.d}</span>
-                    <span className="ini3-sede__entrar">
-                      Entrar
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
-                    </span>
-                  </span>
-                </Link>
-              ))}
-            </nav>
+                  <Sede id={s.id} />
+                </div>
+              );
+            })}
 
-            <div className="ini3-nave" ref={naveRef} aria-hidden="true">
-              <div className={`vj-burbuja vj-burbuja--arriba ini3-burbuja ${modo === 'espera' && in_ ? 'vj-burbuja--on' : ''}`}>
-                <span>¿Qué servicio quieres conocer?</span>
-              </div>
-              <div className={`ini__nave-cuerpo ${aterriza ? 'is-aterriza' : ''}`}>
-                <Nave id="ini" conLead={false} pose={modo === 'espera' ? 'saludo' : 'senalando'} />
+            {/* estrellas principales: los servicios */}
+            {SERVICIOS.map((s, i) => {
+              const [x, y] = local(s.nodo);
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={['mp-nodo', `mp-nodo--${s.lado}`, sel === i ? 'is-sel' : '', fase === 'tour' && sel === i ? 'is-tour' : ''].join(' ')}
+                  style={{ left: x, top: y, ['--i' as string]: i }}
+                  onClick={() => escoger(i)}
+                  aria-label={s.t}
+                >
+                  <span className="mp-nodo__halo" aria-hidden="true" />
+                  <span className="mp-nodo__orbita" aria-hidden="true" />
+                  <span className="mp-nodo__nucleo" aria-hidden="true" />
+                  <svg className="mp-nodo__destello" viewBox="-10 -10 20 20" aria-hidden="true"><path d="M0,-9 C1,-2 2,-1 9,0 C2,1 1,2 0,9 C-1,2 -2,1 -9,0 C-2,-1 -1,-2 0,-9Z" /></svg>
+                  <span className="mp-nodo__nombre" aria-hidden="true">{s.t}</span>
+                </button>
+              );
+            })}
+
+            {/* Cosmo: "usted está aquí" */}
+            <div className="mp-nave" ref={naveRef} aria-hidden="true">
+              <div className="mp-nave__cuerpo">
+                <div className={`vj-burbuja vj-burbuja--arriba mp-burbuja mp-burbuja--${ladoBurbuja} ${verBurbuja ? 'vj-burbuja--on' : ''}`}>
+                  <span key={burbuja}>{burbuja || SALUDO}</span>
+                </div>
+                <Nave id="mapa" conLead={false} pose={fase === 'mapa' ? 'saludo' : 'senalando'} />
               </div>
             </div>
-          </div>
-
-          {/* asteroides en primer plano */}
-          <div className="ini3-cerca" aria-hidden="true">
-            <div className="ini3-roca ini3-roca--a"><Planeta v="piedra" giro={40} /></div>
-            <div className="ini3-roca ini3-roca--b"><Planeta v="piedra" giro={55} /></div>
-          </div>
         </div>
 
+          {/* panel del servicio escogido */}
+          <div className={`mp-panel ${fase === 'zoom' && activo ? 'is-on' : ''}`} role="region" aria-live="polite" aria-label={activo?.t ?? 'Servicio'}>
+            {activo && (
+              <>
+                <h2 className="mp-panel__titulo">{activo.t}</h2>
+                <p className="mp-panel__linea">{activo.linea}</p>
+                <p className="mp-panel__detalle">{activo.detalle}</p>
+                <div className="mp-panel__botones">
+                  <Link ref={entrarRef} href={activo.href} className="pill pill--blue vj-cta" tabIndex={fase === 'zoom' ? 0 : -1}>
+                    <Destello />
+                    Entrar
+                  </Link>
+                  <button type="button" className="mp-panel__volver" onClick={volver} tabIndex={fase === 'zoom' ? 0 : -1}>
+                    Volver al mapa
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+        {/* textos: pequeños y centrados, encima del mapa */}
+        <div className="ini__capa" ref={capaRef}>
+          <span className="home__brand">STAKEHOLDERS<i /></span>
+          <div className={`ini__copy ${in_ ? 'is-in' : ''}`}>
+            <h1 aria-label={TITULO}>
+              {TITULO.split(' ').map((w, i) => (
+                <Fragment key={i}>
+                  <span className="w" aria-hidden="true">
+                    <span className="wi" style={{ transitionDelay: `${i * 55}ms` }}>{w}</span>
+                  </span>{' '}
+                </Fragment>
+              ))}
+            </h1>
+            <h2 className="lead fade" style={{ transitionDelay: '.45s' }}>
+              Contadores públicos que llevan la contabilidad y la nómina de tu empresa. Y si eres persona natural, también te ayudamos con tu declaración de renta.
+            </h2>
+            <div className="fade" style={{ transitionDelay: '.65s' }}>
+              <button type="button" className="home__cta-btn ini__cta" onClick={recorrer}>
+                <span>Elige lo que necesitas resolver</span>
+                <span className="home__cta-arrow" aria-hidden="true">→</span>
+              </button>
+            </div>
+          </div>
+          <p className="ini__instruccion">Escoge una sede y Cosmo te lleva</p>
+        </div>
+      </section>
+
+      <footer className="ini__pie">
         <Constelacion />
         <div className="home__foot">
           <span>Stakeholders 2026 · Colombia</span>
           <Link href="/admin/login">Acceso equipo</Link>
         </div>
-      </main>
+      </footer>
     </div>
   );
 }
