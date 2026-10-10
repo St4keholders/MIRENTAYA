@@ -1,5 +1,5 @@
-import Inicio from '@/components/stakeholders/inicio/Inicio';
+import Horizonte from '@/components/stakeholders/inicio/Horizonte';
 
 export default function HomePage() {
-  return <Inicio />;
+  return <Horizonte />;
 }

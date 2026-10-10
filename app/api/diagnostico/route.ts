@@ -5,6 +5,10 @@ import { erpDb } from '@/lib/erp/db';
 const TRABAJADORES = ['1 a 5', '6 a 20', '21 a 50', 'Más de 50'];
 const MOTIVOS = ['Adquirir el servicio', 'Hablar con un contador'];
 const PIEZAS = ['Contabilidad', 'Nómina', 'Contador acompañante', 'Infraestructura tecnológica'];
+// inicio: el botón "Hablar con un contador" pregunta qué servicio le interesa
+const INTERESES: Record<string, string> = {
+  contabilidad: 'Contabilidad', nomina: 'Nómina', renta: 'Renta persona natural', personalizado: 'Servicio personalizado', otro: 'Aún no lo sabe',
+};
 
 export async function POST(request: Request) {
   try {
@@ -25,11 +29,14 @@ export async function POST(request: Request) {
       motivo,
       piezas,
       mensaje,
+      interes,
     } = payload;
     // /nomina usa el mismo agendamiento, con trabajadores en lugar de facturas
     const esNomina = servicio === 'nomina';
     // /personalizado: el cliente arma su servicio con las piezas que escoge
     const esPersonalizado = servicio === 'personalizado';
+    const esInicio = servicio === 'inicio';
+    const interesOk = typeof interes === 'string' && interes in INTERESES ? interes : 'otro';
     const piezasOk: string[] = Array.isArray(piezas) ? piezas.filter((p: unknown) => typeof p === 'string' && PIEZAS.includes(p)) : [];
     const mensajeOk = typeof mensaje === 'string' ? mensaje.trim().slice(0, 2000) : '';
 
@@ -48,7 +55,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!esNomina && !esPersonalizado && !facturas) {
+    if (!esNomina && !esPersonalizado && !esInicio && !facturas) {
       return NextResponse.json(
         { error: 'Por favor selecciona el rango aproximado de facturas de venta al mes.' },
         { status: 400 }
@@ -84,11 +91,11 @@ export async function POST(request: Request) {
         : 'Virtual (Google Meet)';
 
     const detalleNotas = [
-      esNomina ? 'Servicio: Nómina' : esPersonalizado ? 'Servicio: Personalizado' : null,
+      esNomina ? 'Servicio: Nómina' : esPersonalizado ? 'Servicio: Personalizado' : esInicio ? `Inicio · Hablar con un contador · Interés: ${INTERESES[interesOk]}` : null,
       `Empresa: ${empresa.trim()}`,
-      esNomina ? `Trabajadores: ${trabajadores}` : esPersonalizado ? `Piezas: ${piezasOk.join(', ') || 'por definir con el contador'}` : `Facturas/mes: ${facturas}`,
+      esNomina ? `Trabajadores: ${trabajadores}` : esPersonalizado ? `Piezas: ${piezasOk.join(', ') || 'por definir con el contador'}` : esInicio ? null : `Facturas/mes: ${facturas}`,
       esNomina && MOTIVOS.includes(motivo) ? `Necesita: ${motivo}` : null,
-      esPersonalizado && mensajeOk ? `Mensaje: ${mensajeOk}` : null,
+      (esPersonalizado || esInicio) && mensajeOk ? `Mensaje: ${mensajeOk}` : null,
       plan ? `Plan sugerido: ${plan}` : null,
       `Modalidad: ${modalidad}`,
       modalidad === 'presencial' ? `Dirección: ${direccion.trim()}` : null,
@@ -124,13 +131,13 @@ export async function POST(request: Request) {
           celular: whatsapp.trim(),
           correo: correo.trim(),
           debe_declarar: true,
-          topes_superados: [esNomina ? `Trabajadores: ${trabajadores}` : esPersonalizado ? `Piezas: ${piezasOk.join(', ') || 'por definir'}` : facturas],
+          topes_superados: [esNomina ? `Trabajadores: ${trabajadores}` : esPersonalizado ? `Piezas: ${piezasOk.join(', ') || 'por definir'}` : esInicio ? `Interés: ${INTERESES[interesOk]}` : facturas],
           barra_patrimonio: 0,
           barra_ingresos: 0,
           barra_creditos: 0,
           barra_movimientos: 0,
           estado: 'diagnostico_solicitado',
-          source: esNomina ? 'nomina_cita' : esPersonalizado ? 'personalizado_cita' : 'contabilidad_diagnostico',
+          source: esNomina ? 'nomina_cita' : esPersonalizado ? 'personalizado_cita' : esInicio ? 'inicio_cita' : 'contabilidad_diagnostico',
         })
         .select('id')
         .single();
@@ -147,7 +154,7 @@ export async function POST(request: Request) {
         full_name: `${nombre.trim()} (${empresa.trim()})`,
         email: correo.trim(),
         phone: whatsapp.trim(),
-        source: esNomina ? 'nomina_cita' : esPersonalizado ? 'personalizado_cita' : 'contabilidad_diagnostico',
+        source: esNomina ? 'nomina_cita' : esPersonalizado ? 'personalizado_cita' : esInicio ? 'inicio_cita' : 'contabilidad_diagnostico',
         lead_id: leadId,
         stage: 'diagnostico',
       });
@@ -155,15 +162,15 @@ export async function POST(request: Request) {
       console.error('[api/diagnostico] Error en pipeline_leads:', e);
     }
 
-    // 4. Nómina y personalizado: también quedan en los leads del CRM con su servicio
-    if (esNomina || esPersonalizado) {
+    // 4. Nómina, personalizado e inicio: también quedan en los leads del CRM con su servicio
+    if (esNomina || esPersonalizado || esInicio) {
       try {
         const { error: crmErr } = await erpDb().from('erp_leads').insert({
           nombre: nombre.trim(),
           empresa: empresa.trim(),
           email: correo.trim(),
           telefono: whatsapp.trim(),
-          servicio: esNomina ? 'nomina' : 'personalizado',
+          servicio: esNomina ? 'nomina' : esPersonalizado ? 'personalizado' : interesOk,
           origen: 'web',
           mensaje: `${detalleNotas} | Cita: ${fecha}`,
         });
