@@ -126,16 +126,25 @@ export async function POST(request: Request) {
     };
 
     const isHttps = request.url.startsWith('https://');
-    const res = NextResponse.json({ success: true, user: safeUser });
 
-    // 7. Crear cookie HttpOnly firmada sh_session
+    // 7. Crear cookie HttpOnly firmada sh_session.
+    // Si no se puede firmar la sesión (p. ej. falta SESSION_SECRET o rol inválido),
+    // NO se responde éxito: de lo contrario el proxy devuelve al login sin explicación.
+    let token: string | null = null;
     try {
-      const token = crearToken(safeUser);
-      if (token) setSessionCookie(res, token, isHttps);
+      token = crearToken(safeUser);
     } catch (tokenErr) {
       console.error('[auth] Error creando sesión:', tokenErr);
     }
+    if (!token) {
+      return NextResponse.json(
+        { error: 'No se pudo iniciar la sesión. Revisa la configuración del servidor (SESSION_SECRET) o el rol del usuario.' },
+        { status: 500 }
+      );
+    }
 
+    const res = NextResponse.json({ success: true, user: safeUser });
+    setSessionCookie(res, token, isHttps);
     return res;
   } catch (err) {
     console.error('[auth] Error en proceso de login:', err);
