@@ -147,6 +147,47 @@ export interface Usuario {
   phone: string | null;
 }
 
+export interface FormularioRegistro {
+  id: string;
+  formulario: string;
+  servicio: string;
+  nombre: string;
+  empresa: string | null;
+  email: string | null;
+  telefono: string | null;
+  modalidad: 'virtual' | 'presencial' | null;
+  direccion: string | null;
+  cita_at: string | null;
+  fecha_preferida: string | null;
+  mensaje: string | null;
+  datos: Record<string, unknown>;
+  estado: 'pendiente' | 'aprobado' | 'descartado';
+  motivo_descarte: string | null;
+  responsable_id: string | null;
+  link_id: string | null;
+  cliente_id: string | null;
+  legacy_lead_id: string | null;
+  aprobado_por: string | null;
+  aprobado_at: string | null;
+  created_at: string;
+  updated_at: string;
+  responsable?: { id: string; nombre: string; email: string; rol: string } | null;
+  cliente?: { id: string; nombre: string; numero_documento: string } | null;
+  link?: { id: string; slug: string; titulo: string } | null;
+}
+
+export interface LinkAgenda {
+  id: string;
+  usuario_id: string;
+  slug: string;
+  titulo: string;
+  servicio: string;
+  activo: boolean;
+  created_at: string;
+  usuario?: { id: string; nombre: string; email: string; rol: string } | null;
+  citas_count?: number;
+}
+
 /* ── Cliente HTTP ────────────────────────────────────────── */
 export class ApiError extends Error {
   constructor(public status: number, message: string) { super(message); }

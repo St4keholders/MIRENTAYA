@@ -535,7 +535,7 @@ function TestContent() {
             <div>
               <span style={categoryStyle}>Cierre</span>
               <h2 style={questionStyle}>¿Tu número de celular o WhatsApp?</h2>
-              <p style={hintStyle}>Para asociar tu resultado y permitir agendar la consultoría.</p>
+              <p style={hintStyle}>Para que un contador pueda contactarte con tu diagnóstico.</p>
               <input type="tel" value={form.celular} onChange={(e) => setForm({ ...form, celular: e.target.value })}
                 placeholder="Ej. 3001234567" style={{ ...inputStyle, fontFamily: 'var(--mono)', marginBottom: 8 }} autoFocus />
             </div>

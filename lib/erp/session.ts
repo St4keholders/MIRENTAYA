@@ -1,11 +1,12 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { erpDb } from './db';
 import { normalizarRol, puede, type Modulo, type Rol } from './permisos';
 
 /**
  * Sesión firmada (HMAC-SHA256) en cookie HttpOnly.
- * Secreto: SESSION_SECRET o, si no existe, SUPABASE_SERVICE_ROLE_KEY (ya configurada en Vercel).
+ * Secreto: SESSION_SECRET obligatoria.
  */
 export const SESSION_COOKIE = 'sh_session';
 const MAX_AGE_SECONDS = 60 * 60 * 12; // 12 horas
@@ -19,9 +20,9 @@ export interface Sesion {
 }
 
 function secreto(): string {
-  const s = process.env.SESSION_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const s = process.env.SESSION_SECRET || '';
   if (s.length < 16) {
-    throw new Error('Falta SESSION_SECRET (o SUPABASE_SERVICE_ROLE_KEY) en las variables de entorno');
+    throw new Error('Falta SESSION_SECRET en las variables de entorno (mínimo 16 caracteres)');
   }
   return s;
 }
@@ -70,10 +71,11 @@ export function leerToken(token: string | undefined | null): Sesion | null {
   }
 }
 
-export function setSessionCookie(res: NextResponse, token: string) {
+export function setSessionCookie(res: NextResponse, token: string, requestIsHttps?: boolean) {
+  const isSecure = process.env.NODE_ENV === 'production' || Boolean(requestIsHttps);
   res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isSecure,
     sameSite: 'lax',
     path: '/',
     maxAge: MAX_AGE_SECONDS,
@@ -89,16 +91,52 @@ export async function getSesion(): Promise<Sesion | null> {
   return leerToken(store.get(SESSION_COOKIE)?.value);
 }
 
+export const obtenerSesionERP = getSesion;
+
 export class HttpError extends Error {
   constructor(public status: number, message: string) {
     super(message);
   }
 }
 
-/** Exige sesión válida y (opcional) acceso a un módulo. Lanza HttpError. */
+/** 
+ * Exige sesión válida y (opcional) acceso a un módulo.
+ * Revalida siempre `usuarios.activo` y `usuarios.rol` en la base de datos.
+ * Lanza HttpError.
+ */
 export async function requerir(modulo?: Modulo): Promise<Sesion> {
   const s = await getSesion();
   if (!s) throw new HttpError(401, 'Sesión expirada. Vuelve a iniciar sesión.');
-  if (modulo && !puede(s.rol, modulo)) throw new HttpError(403, 'No tienes permiso para este módulo.');
+
+  // Consulta el estado real del usuario en la base de datos
+  const db = erpDb();
+  const { data: usuario, error } = await db
+    .from('usuarios')
+    .select('id, activo, rol')
+    .eq('id', s.id)
+    .maybeSingle();
+
+  if (error || !usuario || !usuario.activo) {
+    throw new HttpError(401, 'Usuario inactivo o sesión no válida.');
+  }
+
+  const rolActual = normalizarRol(usuario.rol);
+  if (!rolActual) {
+    throw new HttpError(403, 'Rol de usuario no reconocido.');
+  }
+  s.rol = rolActual;
+
+  if (modulo && !puede(s.rol, modulo)) {
+    throw new HttpError(403, 'No tienes permiso para este módulo.');
+  }
+  return s;
+}
+
+/** Exige que la sesión tenga uno de los roles autorizados */
+export async function requerirRol(rolesPermitidos: Rol[]): Promise<Sesion> {
+  const s = await requerir();
+  if (!rolesPermitidos.includes(s.rol)) {
+    throw new HttpError(403, 'No tienes permiso para realizar esta acción.');
+  }
   return s;
 }

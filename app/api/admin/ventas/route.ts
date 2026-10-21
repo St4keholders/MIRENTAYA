@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { requerir, HttpError } from '@/lib/erp/session';
 
 export async function GET() {
   try {
+    const s = await requerir();
+    if (s.rol !== 'admin' && s.rol !== 'desarrollador' && s.rol !== 'contador') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
     const supabase = supabaseAdmin();
 
     const { data: leads, error } = await supabase
@@ -17,7 +23,7 @@ export async function GET() {
       .eq('pagado', true)
       .order('created_at', { ascending: false });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: 'Error al consultar ventas' }, { status: 500 });
 
     let totalVentasBrutas = 0;
     let totalComisionesContadores = 0;
@@ -92,8 +98,10 @@ export async function GET() {
       },
       ventas: desgloseVentas,
     });
-  } catch (err: any) {
-    console.error('Error calculando reporte financiero:', err);
-    return NextResponse.json({ error: err?.message || 'Error interno' }, { status: 500 });
+  } catch (err: unknown) {
+    if (err instanceof HttpError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }

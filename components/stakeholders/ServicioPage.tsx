@@ -158,6 +158,7 @@ export default function ServicioPage({ id }: { id: ServicioId }) {
         <nav>
           <Link href="/">Inicio</Link>
           <a href="#solicitar">Contacto</a>
+          <Link href="/admin/login" style={{ opacity: 0.6 }}>Acceso equipo</Link>
         </nav>
       </footer>
     </div>

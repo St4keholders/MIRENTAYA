@@ -48,6 +48,36 @@ export type Theme = ReturnType<typeof makeTheme>;
 const ThemeCtx = createContext<Theme>(makeTheme(true));
 export const ThemeProvider = ThemeCtx.Provider;
 export const useT = () => useContext(ThemeCtx);
+export const useTheme = useT;
+
+export function EmptyState({
+  title,
+  description,
+  actionLabel,
+  onAction,
+}: {
+  title: string;
+  description?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  const t = useT();
+  return (
+    <Card style={{ padding: 40, textAlign: 'center' }}>
+      <div style={{ fontSize: 16, fontWeight: 700, color: t.text, marginBottom: 8 }}>{title}</div>
+      {description && (
+        <div style={{ fontSize: 13, color: t.subtext, maxWidth: 460, margin: '0 auto 20px', lineHeight: 1.5 }}>
+          {description}
+        </div>
+      )}
+      {actionLabel && onAction && (
+        <Btn variant="primary" onClick={onAction}>
+          {actionLabel}
+        </Btn>
+      )}
+    </Card>
+  );
+}
 
 /* ── Formato ─────────────────────────────────────────────── */
 export const cop = (v: number | string | null | undefined) =>
@@ -316,7 +346,7 @@ export function Modal({ open, onClose, title, eyebrow, children, footer, width =
       <div className="erp-modal" style={{
         background: t.modalBg, border: `1px solid ${t.border}`, borderRadius: 20, width: '100%', maxWidth: width,
         maxHeight: '92vh', display: 'flex', flexDirection: 'column', color: t.text,
-        boxShadow: '0 0 0 1px rgba(255,255,255,.04), 0 0 100px -24px rgba(59,110,255,.6)',
+        boxShadow: '0 0 0 1px rgba(255,255,255,.06), 0 30px 80px -20px rgba(0,0,0,.7)',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, padding: '22px 24px 14px' }}>
           <div style={{ minWidth: 0 }}>

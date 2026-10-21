@@ -27,32 +27,47 @@ export async function POST(request: Request) {
       id: transactionId,
       reference,
       status,
+      amount_in_cents: transactionAmountInCents,
       payment_method_type,
     } = transaction;
 
     console.log(`[wompi-webhook] Evento recibido: Ref ${reference} | Estado: ${status} | Trans: ${transactionId}`);
 
-    // 2. Verificar la firma de integridad de Wompi
+    // 2. Verificar la firma de integridad de Wompi (CRÍTICO: 401 si no es válida)
     const isValid = verifyEventChecksum(body);
     if (!isValid) {
       console.warn(`⚠️ Signature de Wompi inválida para referencia ${reference}`);
+      return NextResponse.json({ error: 'Firma de integridad inválida' }, { status: 401 });
     }
 
     const supabase = supabaseAdmin();
 
-    // 3. Buscar la orden por referencia
+    // 3. Buscar la orden por referencia y validar coincidencia de monto
     const { data: order, error: orderFetchError } = await supabase
       .from('orders')
       .select('*')
       .eq('reference', reference)
-      .single();
+      .maybeSingle();
 
     if (orderFetchError || !order) {
       console.error(`Orden no encontrada para referencia ${reference}:`, orderFetchError);
       return NextResponse.json({ error: 'Orden no encontrada' }, { status: 404 });
     }
 
-    // 4. Actualizar estado de la orden
+    if (Number(order.amount_in_cents) !== Number(transactionAmountInCents)) {
+      console.error(
+        `Discrepancia de monto en orden ${reference}: esperado ${order.amount_in_cents}, recibido ${transactionAmountInCents}`
+      );
+      return NextResponse.json({ error: 'Monto de transacción no coincide con la orden' }, { status: 400 });
+    }
+
+    // 4. Idempotencia: si la orden ya está APPROVED, no repetir efectos secundarios
+    if (order.status === 'APPROVED') {
+      console.log(`ℹ️ Orden ${reference} ya procesada anteriormente como APPROVED (idempotente)`);
+      return NextResponse.json({ success: true, status: 'APPROVED', message: 'Orden ya procesada' });
+    }
+
+    // 5. Actualizar estado de la orden
     const { error: updateError } = await supabase
       .from('orders')
       .update({
@@ -68,58 +83,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Error actualizando orden' }, { status: 500 });
     }
 
-    // 5. Si el pago fue APROBADO → marcar el lead como pagado y avanzar etapa
+    // 6. Si el pago fue APROBADO → marcar el lead como pagado y avanzar etapa
     if (status === 'APPROVED') {
       let leadId = order.lead_id;
 
-      // Fallback 1: resolver por lead_slug si order.lead_id está vacío
+      // Solo se vincula por orders.lead_id u orders.lead_slug (se eliminan fallbacks por email/teléfono/nombre)
       if (!leadId && order.lead_slug) {
         const { data: leadData } = await supabase
           .from('leads')
           .select('id')
           .eq('slug_publico', order.lead_slug)
-          .single();
+          .maybeSingle();
         leadId = leadData?.id ?? null;
       }
 
-      // Fallback 2: resolver por teléfono del cliente si order.lead_id está vacío
-      if (!leadId && order.customer_phone) {
-        const { data: leadDataByPhone } = await supabase
-          .from('leads')
-          .select('id')
-          .eq('celular', order.customer_phone.trim())
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (leadDataByPhone) leadId = leadDataByPhone.id;
-      }
-
-      // Fallback 3: resolver por correo del cliente si order.lead_id está vacío
-      if (!leadId && order.customer_email) {
-        const { data: leadDataByEmail } = await supabase
-          .from('leads')
-          .select('id')
-          .eq('correo', order.customer_email.trim())
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (leadDataByEmail) leadId = leadDataByEmail.id;
-      }
-
-      // Fallback 4: resolver por nombre del cliente si order.lead_id está vacío
-      if (!leadId && order.customer_name) {
-        const { data: leadDataByName } = await supabase
-          .from('leads')
-          .select('id')
-          .eq('nombre', order.customer_name.trim())
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        if (leadDataByName) leadId = leadDataByName.id;
-      }
-
       if (leadId) {
-        // Enlazar la orden con el lead encontrado en la BD si no estaba enlazado
         if (!order.lead_id) {
           await supabase.from('orders').update({ lead_id: leadId }).eq('reference', reference);
         }
@@ -129,34 +107,31 @@ export async function POST(request: Request) {
           .from('leads')
           .select('referrer_id, seller_id')
           .eq('id', leadId)
-          .single();
+          .maybeSingle();
 
-        // Si el lead tiene referido pero no vendedor, verificar si el referido es vendedor
         let sellerIdToSet: string | null | undefined = undefined;
         if (currentLead?.referrer_id && !currentLead?.seller_id) {
           const { data: referrerUser } = await supabase
             .from('usuarios')
             .select('id, rol')
             .eq('id', currentLead.referrer_id)
-            .single();
+            .maybeSingle();
           if (referrerUser?.rol === 'vendedor') {
             sellerIdToSet = referrerUser.id;
             console.log(`🔗 Asignando seller_id = referrer_id (vendedor) para lead ${leadId}`);
           }
         }
 
-        // Marcar como pagado y avanzar a etapa de documentos
+        const updatePayload: Record<string, unknown> = {
+          pagado: true,
+          etapa: 'documentos',
+          estado: 'agendado',
+        };
         if (sellerIdToSet !== undefined) {
-          await supabase
-            .from('leads')
-            .update({ pagado: true, etapa: 'documentos', estado: 'agendado', seller_id: sellerIdToSet } as any)
-            .eq('id', leadId);
-        } else {
-          await supabase
-            .from('leads')
-            .update({ pagado: true, etapa: 'documentos', estado: 'agendado' })
-            .eq('id', leadId);
+          updatePayload.seller_id = sellerIdToSet;
         }
+
+        await supabase.from('leads').update(updatePayload as any).eq('id', leadId);
 
         // Actualizar etapa en pipeline_leads también
         await supabase
@@ -166,7 +141,7 @@ export async function POST(request: Request) {
 
         console.log(`✅ Lead ${leadId} marcado como PAGADO, etapa → documentos`);
       } else {
-        console.warn(`⚠️ No se pudo vincular la orden ${reference} con ningún lead en la base de datos.`);
+        console.warn(`⚠️ No se pudo vincular la orden ${reference} con ningún lead.`);
       }
     }
 
@@ -177,4 +152,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error?.message || 'Error interno' }, { status: 500 });
   }
 }
-

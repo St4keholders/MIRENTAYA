@@ -3,17 +3,16 @@ import { HttpError } from './session';
 
 type PgLikeError = { message?: string; code?: string; details?: string };
 
-/** Traduce errores de Postgres / PostgREST a mensajes legibles. */
+/** Traduce errores controlados de Postgres / PostgREST a mensajes legibles sin exponer datos crudos del motor */
 export function mensajeError(err: unknown): string {
   const e = err as PgLikeError;
-  const msg = e?.message || 'Error interno';
-  if (e?.code === '23505') return 'Ya existe un registro con ese número de documento.';
-  if (e?.code === '23503') return 'El registro está siendo usado por otros documentos y no se puede eliminar.';
-  if (e?.code === '23514') return 'Algún valor no es válido. Revisa los campos.';
-  if (e?.code === '22P02') return 'Formato de dato inválido.';
-  if (e?.code === 'PGRST205' || /schema cache|does not exist/i.test(msg))
-    return 'Las tablas del ERP aún no existen. Ejecuta la migración supabase/migrations/20261003_erp_crm.sql en Supabase.';
-  return msg;
+  if (e?.code === '23505') return 'Ya existe un registro con ese número de documento o identificador.';
+  if (e?.code === '23503') return 'El registro está siendo utilizado y no se puede modificar o eliminar.';
+  if (e?.code === '23514') return 'Algún valor ingresado no cumple con las reglas requeridas. Revisa los campos.';
+  if (e?.code === '22P02') return 'El formato de uno de los datos enviados no es válido.';
+  
+  // No devolver mensajes crudos de la base de datos al cliente
+  return 'Ocurrió un error al procesar la solicitud en el servidor.';
 }
 
 /** Envuelve un handler: maneja HttpError y errores de BD de forma uniforme. */
@@ -25,8 +24,12 @@ export function handler<A extends unknown[]>(fn: (...args: A) => Promise<Respons
       if (err instanceof HttpError) {
         return NextResponse.json({ error: err.message }, { status: err.status });
       }
-      console.error('[erp]', err);
-      return NextResponse.json({ error: mensajeError(err) }, { status: 400 });
+      console.error('[erp] Error interno en servidor:', err);
+      const isClientError = (err as PgLikeError)?.code?.startsWith('23') || (err as PgLikeError)?.code === '22P02';
+      return NextResponse.json(
+        { error: mensajeError(err) },
+        { status: isClientError ? 400 : 500 }
+      );
     }
   };
 }
@@ -55,6 +58,14 @@ export function pick(body: Record<string, unknown>, keys: readonly string[]) {
     }
   }
   return out;
+}
+
+export function jsonOk<T>(data: T, status = 200) {
+  return NextResponse.json(data, { status });
+}
+
+export function jsonError(error: string, status = 400) {
+  return NextResponse.json({ error }, { status });
 }
 
 /** Escapa texto para usarlo dentro de un filtro .or() de PostgREST */

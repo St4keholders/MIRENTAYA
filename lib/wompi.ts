@@ -10,10 +10,16 @@ export interface WompiConfig {
 
 export function getWompiConfig(): WompiConfig {
   const env = ((process.env.WOMPI_ENV || 'prod').trim()) as 'test' | 'prod';
-  const publicKey = (process.env.WOMPI_PUBLIC_KEY || 'pub_prod_ePUJ99tTiBJWN848sNEjjFMAPkKIdC1N').trim();
-  const privateKey = (process.env.WOMPI_PRIVATE_KEY || 'prv_prod_Rgz9vyg40uFTiqOg0wKAMBFzyPp9QPti').trim();
-  const integritySecret = (process.env.WOMPI_INTEGRITY_SECRET || (publicKey.startsWith('pub_prod_') ? 'prod_integrity_SgV6nnTv2jKHjvGSy3436onFZi0AXGfh' : 'test_integrity_bllnWEfC38sHDEBlTqVBDfHq6Bx63k8D')).trim();
-  const eventsSecret = (process.env.WOMPI_EVENTS_SECRET || (publicKey.startsWith('pub_prod_') ? 'prod_events_6Bq8Etk5DiWZIpZqNUilliCCIpqwlO4C' : 'test_events_jmPRYmPLOuXvqWagim8zihjQU9poXh5p')).trim();
+  const publicKey = process.env.WOMPI_PUBLIC_KEY?.trim();
+  const privateKey = process.env.WOMPI_PRIVATE_KEY?.trim();
+  const integritySecret = process.env.WOMPI_INTEGRITY_SECRET?.trim();
+  const eventsSecret = process.env.WOMPI_EVENTS_SECRET?.trim();
+
+  if (!publicKey || !privateKey || !integritySecret || !eventsSecret) {
+    throw new Error(
+      'Faltan variables de entorno obligatorias de Wompi (WOMPI_PUBLIC_KEY, WOMPI_PRIVATE_KEY, WOMPI_INTEGRITY_SECRET, WOMPI_EVENTS_SECRET)'
+    );
+  }
 
   return { env, publicKey, privateKey, integritySecret, eventsSecret };
 }
@@ -38,12 +44,14 @@ export function generateIntegritySignature(
  * signature: { properties: ["transaction.id", "transaction.status", ...], checksum: "..." }
  * SHA256(valores_concatenados + timestamp + eventsSecret)
  */
-export function verifyEventChecksum(payload: any): boolean {
+export function verifyEventChecksum(payload: Record<string, unknown>): boolean {
   try {
     const { eventsSecret } = getWompiConfig();
-    const { event, data, signature, timestamp } = payload;
+    const signature = payload?.signature as { properties?: string[]; checksum?: string } | undefined;
+    const timestamp = payload?.timestamp;
+    const data = payload?.data as Record<string, unknown> | undefined;
 
-    if (!signature || !signature.properties || !signature.checksum || !eventsSecret) {
+    if (!signature || !signature.properties || !signature.checksum || !eventsSecret || !timestamp) {
       return false;
     }
 
@@ -51,21 +59,21 @@ export function verifyEventChecksum(payload: any): boolean {
     let concatenated = '';
     for (const propPath of signature.properties) {
       const parts = propPath.split('.');
-      let val = payload.data;
+      let val: unknown = data;
       for (const p of parts) {
         if (val && typeof val === 'object') {
-          val = val[p];
+          val = (val as Record<string, unknown>)[p];
         } else {
           val = undefined;
           break;
         }
       }
       if (val !== undefined && val !== null) {
-        concatenated += val;
+        concatenated += String(val);
       }
     }
 
-    concatenated += timestamp;
+    concatenated += String(timestamp);
     concatenated += eventsSecret;
 
     const calculatedChecksum = createHash('sha256').update(concatenated).digest('hex');
@@ -79,7 +87,7 @@ export function verifyEventChecksum(payload: any): boolean {
 /**
  * Consulta el estado de una transacción directamente en Wompi API
  */
-export async function getWompiTransaction(transactionId: string): Promise<any> {
+export async function getWompiTransaction(transactionId: string): Promise<Record<string, unknown>> {
   const { env, privateKey } = getWompiConfig();
   const baseUrl = env === 'prod' ? 'https://production.wompi.co/v1' : 'https://sandbox.wompi.co/v1';
 

@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { requerir, HttpError } from '@/lib/erp/session';
 
-/* GET /api/ajustes — get app settings */
+/* GET /api/ajustes — get app settings (cualquier sesión válida) */
 export async function GET() {
   try {
+    await requerir();
+
     const supabase = supabaseAdmin();
     const { data, error } = await supabase
       .from('app_settings')
@@ -11,17 +14,24 @@ export async function GET() {
       .eq('id', true)
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: 'Error al consultar ajustes' }, { status: 500 });
     return NextResponse.json({ settings: data });
-  } catch (e) {
-    console.error(e);
+  } catch (err: unknown) {
+    if (err instanceof HttpError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
 
-/* PATCH /api/ajustes — update app settings (admin only) */
+/* PATCH /api/ajustes — update app settings (admin, desarrollador) */
 export async function PATCH(request: Request) {
   try {
+    const s = await requerir();
+    if (s.rol !== 'admin' && s.rol !== 'desarrollador') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
     const body = await request.json();
     const { tope, pct_contador, pct_vendedor, pct_desarrollo, pct_ref_bajo, pct_ref_sobre } = body;
 
@@ -31,10 +41,12 @@ export async function PATCH(request: Request) {
       .update({ tope, pct_contador, pct_vendedor, pct_desarrollo, pct_ref_bajo, pct_ref_sobre } as any)
       .eq('id', true);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: 'Error al actualizar ajustes' }, { status: 500 });
     return NextResponse.json({ success: true });
-  } catch (e) {
-    console.error(e);
+  } catch (err: unknown) {
+    if (err instanceof HttpError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }

@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createHash } from 'crypto';
 import { erpDb } from '@/lib/erp/db';
 import { handler, leerJson, ok } from '@/lib/erp/http';
 import { normalizarRol } from '@/lib/erp/permisos';
 import { HttpError, requerir } from '@/lib/erp/session';
+import { hashPasswordScrypt } from '@/lib/erp/password';
 
-/* Mismo esquema de hash que usa la función authenticate_user existente */
-const hashPwd = (pwd: string) => createHash('sha256').update(pwd + 'stakeholders2026').digest('hex');
 const ROLES = ['admin', 'contador', 'vendedor', 'referido', 'desarrollador'];
 const COLS = 'id, nombre, email, rol, activo, created_at, referral_slug, phone';
 
@@ -28,9 +26,17 @@ export const POST = handler(async (req: Request) => {
   if (password.length < 8) throw new HttpError(400, 'La contraseña debe tener al menos 8 caracteres');
   if (!ROLES.includes(rol)) throw new HttpError(400, 'Rol inválido');
   if (rol === 'desarrollador' && normalizarRol(s.rol) !== 'desarrollador') throw new HttpError(403, 'Solo un desarrollador puede crear otro desarrollador');
+  
+  const scryptHash = await hashPasswordScrypt(password);
   const data = ok(await erpDb().from('usuarios').insert({
-    nombre: nombre.trim(), email: email.toLowerCase().trim(), rol, activo: true,
-    password_hash: hashPwd(password), referral_slug: slugDe(nombre), phone: phone?.trim() || null,
+    nombre: nombre.trim(),
+    email: email.toLowerCase().trim(),
+    rol,
+    activo: true,
+    password_hash: scryptHash,
+    password_algo: 'scrypt_v1',
+    referral_slug: slugDe(nombre),
+    phone: phone?.trim() || null,
   }).select(COLS).single());
   return NextResponse.json({ data });
 });
@@ -53,7 +59,8 @@ export const PATCH = handler(async (req: Request) => {
   if (phone !== undefined) upd.phone = phone ? String(phone).trim() : null;
   if (password) {
     if (String(password).length < 8) throw new HttpError(400, 'La contraseña debe tener al menos 8 caracteres');
-    upd.password_hash = hashPwd(String(password));
+    upd.password_hash = await hashPasswordScrypt(String(password));
+    upd.password_algo = 'scrypt_v1';
   }
   const data = ok(await erpDb().from('usuarios').update(upd).eq('id', id as string).select(COLS).single());
   return NextResponse.json({ data });

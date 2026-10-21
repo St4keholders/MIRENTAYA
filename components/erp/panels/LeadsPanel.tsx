@@ -21,9 +21,41 @@ export default function LeadsPanel({ esAdmin, puedeClientes }: { esAdmin: boolea
   const t = useT();
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-      <div style={{ display: 'flex', gap: 6 }}>
-        <Btn small variant={vista === 'crm' ? 'link' : 'ghost'} onClick={() => setVista('crm')}>Embudo comercial</Btn>
-        <Btn small variant={vista === 'renta' ? 'link' : 'ghost'} onClick={() => setVista('renta')}>Leads del test de renta</Btn>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          onClick={() => setVista('crm')}
+          style={{
+            padding: '6px 14px',
+            borderRadius: 8,
+            fontSize: 11,
+            fontFamily: 'var(--mono)',
+            cursor: 'pointer',
+            background: vista === 'crm' ? 'rgba(255,255,255,0.08)' : 'transparent',
+            border: `1px solid ${vista === 'crm' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)'}`,
+            color: vista === 'crm' ? t.text : t.subtext,
+            transition: 'all .15s',
+          }}
+        >
+          Embudo comercial
+        </button>
+        <button
+          type="button"
+          onClick={() => setVista('renta')}
+          style={{
+            padding: '6px 14px',
+            borderRadius: 8,
+            fontSize: 11,
+            fontFamily: 'var(--mono)',
+            cursor: 'pointer',
+            background: vista === 'renta' ? 'rgba(255,255,255,0.08)' : 'transparent',
+            border: `1px solid ${vista === 'renta' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)'}`,
+            color: vista === 'renta' ? t.text : t.subtext,
+            transition: 'all .15s',
+          }}
+        >
+          Leads del test de renta
+        </button>
         <span style={{ fontSize: 11, color: t.subtext, alignSelf: 'center', marginLeft: 8 }}>
           {vista === 'crm' ? 'Prospectos de todos los servicios. Los formularios del sitio llegan aquí.' : 'Personas que hicieron el test en /renta. Impórtalas como clientes.'}
         </span>
@@ -79,7 +111,7 @@ function EmbudoCRM({ esAdmin, puedeClientes }: { esAdmin: boolean; puedeClientes
           const color = tone === 'green' ? t.green : tone === 'yellow' ? t.amber : tone === 'gray' ? t.subtext : t.sky;
           return (
             <button key={e} onClick={() => setEstado(on ? 'todos' : e)} style={{
-              textAlign: 'left', background: on ? 'rgba(61,107,255,0.14)' : t.cardBg, border: `1px solid ${on ? 'rgba(61,107,255,0.5)' : t.border}`,
+              textAlign: 'left', background: on ? 'rgba(255,255,255,0.08)' : t.cardBg, border: `1px solid ${on ? 'rgba(255,255,255,0.22)' : t.border}`,
               borderRadius: 16, padding: '14px 16px', cursor: 'pointer', color: t.text, backdropFilter: 'blur(20px)', transition: 'all .2s',
             }}>
               <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: t.subtext, textTransform: 'uppercase', letterSpacing: '.12em' }}>{label}</span>

@@ -67,12 +67,29 @@ export default function PanelVendedorPage() {
   };
 
   useEffect(() => {
-    const raw = localStorage.getItem('stakeholders_user');
-    if (!raw) { router.push('/admin/login'); return; }
-    const u = JSON.parse(raw);
-    if (u.rol !== 'vendedor') { router.push('/admin/login'); return; }
-    setUserId(u.id);
-    setReferralSlug(u.referral_slug || '');
+    fetch('/api/erp/me')
+      .then((r) => {
+        if (!r.ok) throw new Error('Unauth');
+        return r.json();
+      })
+      .then((json) => {
+        const u = json?.data;
+        if (!u) {
+          router.push('/admin/login');
+          return;
+        }
+        if (u.rol !== 'vendedor') {
+          router.push('/admin/login');
+          return;
+        }
+        setUserId(u.id);
+        setReferralSlug(u.referral_slug || '');
+        localStorage.setItem('stakeholders_user', JSON.stringify(u));
+      })
+      .catch(() => {
+        localStorage.removeItem('stakeholders_user');
+        router.push('/admin/login');
+      });
   }, [router]);
 
   useEffect(() => {
@@ -201,7 +218,11 @@ export default function PanelVendedorPage() {
             {navBtn('comisiones', 'Ganancias')}
           </nav>
         </div>
-        <button onClick={() => { localStorage.removeItem('stakeholders_user'); router.push('/admin/login'); }}
+        <button onClick={async () => {
+          try { await fetch('/api/erp/logout', { method: 'POST' }); } catch {}
+          localStorage.removeItem('stakeholders_user');
+          router.push('/admin/login');
+        }}
           style={{ fontFamily: 'var(--mono)', fontSize: 11, color: '#FF8080', background: 'none', border: 'none', cursor: 'pointer' }}>
           Salir
         </button>

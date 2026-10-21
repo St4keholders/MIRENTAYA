@@ -152,11 +152,24 @@ export default function AdminPipelinePage() {
   const [userId, setUserId] = useState('');
 
   useEffect(() => {
-    const raw = localStorage.getItem('stakeholders_user');
-    if (!raw) { router.push('/admin/login'); return; }
-    const u = JSON.parse(raw);
-    if (u.rol !== 'admin' && u.rol !== 'desarrollador') { router.push('/admin/login'); return; }
-    setUserId(u.id);
+    fetch('/api/erp/me')
+      .then((r) => {
+        if (!r.ok) throw new Error('Unauth');
+        return r.json();
+      })
+      .then((json) => {
+        const u = json?.data;
+        if (!u || (u.rol !== 'admin' && u.rol !== 'desarrollador')) {
+          router.push('/admin/login');
+          return;
+        }
+        setUserId(u.id);
+        localStorage.setItem('stakeholders_user', JSON.stringify(u));
+      })
+      .catch(() => {
+        localStorage.removeItem('stakeholders_user');
+        router.push('/admin/login');
+      });
   }, [router]);
 
   const showToast = (msg: string, ok = true) => {

@@ -317,45 +317,32 @@ export default function ResultClientView({ lead }: { lead: LeadData }) {
       const month = String(agDateSelected.getMonth() + 1).padStart(2, '0');
       const day = String(agDateSelected.getDate()).padStart(2, '0');
       const formattedDateStr = `${year}-${month}-${day}`;
-      const fechaConsulta = `${formattedDateStr}T${agHoraSelected || '08:00'}:00Z`;
-
-      setAgDoneTxt(`Gracias, ${agNombre.trim().split(' ')[0]}. Redirigiendo al pago de tu consultoría...`);
-
-      // Guardar cita y generar checkout de forma paralela para acelerar la redirección
-      const ventasPromise = fetch('/api/ventas', {
+      const res = await fetch('/api/public/cita', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          leadSlug: lead.slug_publico,
-          fechaConsulta,
-          medioContacto: agMedio,
-        }),
-      }).catch((err) => console.warn('[ResultClientView] Error guardando cita:', err));
-
-      const checkoutPromise = fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lead_slug: lead.slug_publico,
-          customer_name: agNombre,
-          customer_email: agCorreo || undefined,
-          customer_phone: agTel,
+          formulario: 'renta_resultado',
+          lead_id: lead.id,
+          servicio: 'renta',
+          nombre: agNombre.trim(),
+          correo: agCorreo.trim(),
+          telefono: agTel.trim(),
+          fecha: formattedDateStr,
+          hora: agHoraSelected || '08:00',
+          notas: `Consulta desde resultado de diagnóstico (${arqData.n}). Método: ${agMedio}`,
         }),
       });
 
-      const [, checkoutRes] = await Promise.all([ventasPromise, checkoutPromise]);
-
-      if (checkoutRes && checkoutRes.ok) {
-        const dataCheckout = await checkoutRes.json();
-        if (dataCheckout.checkoutUrl) {
-          window.location.href = dataCheckout.checkoutUrl;
-          return;
-        }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'No se pudo agendar la cita');
       }
-      throw new Error('No se pudo generar enlace de cobro');
-    } catch (err) {
+
+      setAgDoneTxt('Cita solicitada. Tu contador asignado revisará tu diagnóstico y te contactará.');
+    } catch (err: any) {
       console.error('Error agendando cita:', err);
-      setAgErr('Error de conexión. Por favor intenta de nuevo.');
+      setAgErr(err.message || 'Error de conexión. Por favor intenta de nuevo.');
+    } finally {
       setAgSubmitting(false);
     }
   };
@@ -572,19 +559,25 @@ export default function ResultClientView({ lead }: { lead: LeadData }) {
           border: '1px solid rgba(61,107,255,0.35)', borderRadius: 22,
           padding: 'clamp(20px,5vw,36px)', marginBottom: 24,
         }}>
+          {lead.extemporaneo && (
+            <div style={{
+              background: 'rgba(255,80,80,0.12)', border: '1px solid rgba(255,100,100,0.3)',
+              borderRadius: 12, padding: '10px 14px', marginBottom: 16, color: '#FF8080', fontSize: 13,
+              fontFamily: 'var(--body)', fontWeight: 600,
+            }}>
+              ⚠️ Declaración extemporánea — Te ayudamos a calcular y reducir posibles sanciones.
+            </div>
+          )}
           <h4 style={{ fontFamily: 'var(--display)', fontWeight: 700, fontSize: 'clamp(1.1rem,4vw,1.4rem)', color: '#fff', margin: '0 0 8px', letterSpacing: '-.03em' }}>
-            {lead.debe_declarar ? 'Agenda con un Contador' : 'Confírmalo con un Contador'}
+            {lead.debe_declarar ? 'Agenda tu cita con un Contador' : 'Confírmalo con un Contador'}
           </h4>
-          <p style={{ fontFamily: 'var(--body)', fontSize: 14, color: 'rgba(255,255,255,0.55)', margin: '0 0 8px', lineHeight: 1.55 }}>
+          <p style={{ fontFamily: 'var(--body)', fontSize: 14, color: 'rgba(255,255,255,0.55)', margin: '0 0 20px', lineHeight: 1.55 }}>
             {lead.debe_declarar
-              ? 'Garantiza que tu declaración se presente sin errores y a tiempo.'
-              : 'Una revisión experta te certifica si estás libre de declarar.'}
-          </p>
-          <p style={{ fontFamily: 'var(--mono)', fontSize: 11, color: '#3D6BFF', margin: '0 0 20px', letterSpacing: '.06em' }}>
-            $50.000 COP · Abonables al servicio
+              ? 'Garantiza que tu declaración se presente sin errores y con todas las deducciones permitidas por ley.'
+              : 'Una revisión experta te certifica si estás libre de declarar y aclara cualquier duda.'}
           </p>
           <button onClick={handleOpenAgendar} className="pill pill--blue" type="button">
-            Agendar Asesoría →
+            Agenda tu cita con un contador →
           </button>
         </div>
 

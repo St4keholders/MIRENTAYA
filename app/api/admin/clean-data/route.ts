@@ -1,14 +1,28 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { requerir, HttpError } from '@/lib/erp/session';
 
 /**
  * POST /api/admin/clean-data
  * Endpoint administrativo para vaciar todos los datos de prueba de clientes.
+ * Solo desarrollador y requiere body con {"confirmar": "BORRAR-DATOS-PRUEBA"}.
  */
-export async function POST() {
+export async function POST(request: Request) {
   try {
-    const supabase = supabaseAdmin();
+    const s = await requerir();
+    if (s.rol !== 'desarrollador') {
+      return NextResponse.json({ error: 'Solo el rol desarrollador puede ejecutar esta acción' }, { status: 403 });
+    }
 
+    const body = await request.json().catch(() => ({}));
+    if (body?.confirmar !== 'BORRAR-DATOS-PRUEBA') {
+      return NextResponse.json(
+        { error: 'Confirmación requerida. Envíe {"confirmar":"BORRAR-DATOS-PRUEBA"}' },
+        { status: 400 }
+      );
+    }
+
+    const supabase = supabaseAdmin();
     const results: Record<string, number> = {};
 
     // 1. Leads e hijos
@@ -57,10 +71,10 @@ export async function POST() {
       message: 'Vaciado de clientes de prueba completado exitosamente.',
       deletedRecords: results,
     });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err?.message || 'Error interno al vaciar datos' },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    if (err instanceof HttpError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
+    return NextResponse.json({ error: 'Error interno al vaciar datos' }, { status: 500 });
   }
 }

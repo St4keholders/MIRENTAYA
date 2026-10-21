@@ -181,6 +181,7 @@ export default function ContabilidadPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          servicio: 'contabilidad',
           nombre: nombre.trim(),
           empresa: empresa.trim(),
           whatsapp: whatsapp.trim(),
@@ -787,6 +788,8 @@ export default function ContabilidadPage() {
               <Link href="/renta">Renta persona natural</Link>
               <span>·</span>
               <Link href="/personalizado">Servicio personalizado</Link>
+              <span>·</span>
+              <Link href="/admin/login" style={{ opacity: 0.6 }}>Acceso equipo</Link>
             </nav>
           </footer>
         </section>

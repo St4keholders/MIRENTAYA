@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { requerir, HttpError } from '@/lib/erp/session';
 
-/* GET /api/solicitudes — list lead requests */
+/* GET /api/solicitudes — list lead requests (admin, desarrollador) */
 export async function GET() {
   try {
+    const s = await requerir();
+    if (s.rol !== 'admin' && s.rol !== 'desarrollador') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
     const supabase = supabaseAdmin();
     const { data, error } = await supabase
       .from('lead_requests')
@@ -15,51 +21,72 @@ export async function GET() {
       `)
       .order('requested_at', { ascending: false });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: 'Error al consultar solicitudes' }, { status: 500 });
     return NextResponse.json({ requests: data || [] });
-  } catch (e) {
-    console.error(e);
+  } catch (err: unknown) {
+    if (err instanceof HttpError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
 
-/* POST /api/solicitudes — contador requests a lead */
+/* POST /api/solicitudes — contador requests a lead (contador_id sale de la sesión) */
 export async function POST(request: Request) {
   try {
-    const { pipeline_lead_id, contador_id } = await request.json();
-    if (!pipeline_lead_id || !contador_id)
-      return NextResponse.json({ error: 'Campos requeridos' }, { status: 400 });
+    const s = await requerir();
+    if (s.rol !== 'contador' && s.rol !== 'admin' && s.rol !== 'desarrollador') {
+      return NextResponse.json({ error: 'Solo los contadores pueden solicitar leads' }, { status: 403 });
+    }
+
+    const { pipeline_lead_id } = await request.json();
+    if (!pipeline_lead_id) {
+      return NextResponse.json({ error: 'pipeline_lead_id requerido' }, { status: 400 });
+    }
 
     const supabase = supabaseAdmin();
+    // contador_id sale de la sesión
+    const contadorId = s.id;
+
     const { data, error } = await supabase
       .from('lead_requests')
-      .insert({ pipeline_lead_id, contador_id })
+      .insert({ pipeline_lead_id, contador_id: contadorId })
       .select('id, status')
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: 'Error al crear solicitud' }, { status: 500 });
     return NextResponse.json({ request: data });
-  } catch (e) {
-    console.error(e);
+  } catch (err: unknown) {
+    if (err instanceof HttpError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }
 
-/* PATCH /api/solicitudes — admin approves or rejects */
+/* PATCH /api/solicitudes — admin o desarrollador aprueba o rechaza */
 export async function PATCH(request: Request) {
   try {
-    const { id, status, resolved_by } = await request.json();
-    if (!id || !status)
+    const s = await requerir();
+    if (s.rol !== 'admin' && s.rol !== 'desarrollador') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 });
+    }
+
+    const { id, status } = await request.json();
+    if (!id || !status) {
       return NextResponse.json({ error: 'ID y status requeridos' }, { status: 400 });
+    }
 
     const supabase = supabaseAdmin();
+    const resolvedBy = s.id;
 
     // Update request status
     const { error: reqError } = await supabase
       .from('lead_requests')
-      .update({ status, resolved_by, resolved_at: new Date().toISOString() })
+      .update({ status, resolved_by: resolvedBy, resolved_at: new Date().toISOString() })
       .eq('id', id);
-    if (reqError) return NextResponse.json({ error: reqError.message }, { status: 500 });
+
+    if (reqError) return NextResponse.json({ error: 'Error al actualizar solicitud' }, { status: 500 });
 
     // If approved: assign contador and change stage
     if (status === 'aprobada') {
@@ -78,8 +105,10 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (e) {
-    console.error(e);
+  } catch (err: unknown) {
+    if (err instanceof HttpError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return NextResponse.json({ error: 'Error interno' }, { status: 500 });
   }
 }

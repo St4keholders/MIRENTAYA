@@ -12,7 +12,9 @@ import DocumentosPanel from '@/components/erp/panels/DocumentosPanel';
 import LibroDiarioPanel from '@/components/erp/panels/LibroDiarioPanel';
 import LeadsPanel from '@/components/erp/panels/LeadsPanel';
 import UsuariosPanel from '@/components/erp/panels/UsuariosPanel';
-import { MODULOS, esAdmin, type Modulo } from '@/lib/erp/permisos';
+import FormulariosPanel from '@/components/erp/panels/FormulariosPanel';
+import LinksAgendaPanel from '@/components/erp/panels/LinksAgendaPanel';
+import { MODULOS, esAdmin, puedeAprobar, type Modulo } from '@/lib/erp/permisos';
 
 interface Me { id: string; nombre: string; email: string; rol: string; modulos: Modulo[] }
 
@@ -28,6 +30,8 @@ const ICONOS: Record<Modulo, string> = {
   ventas: 'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6',
   leads: 'M22 12h-4l-3 9L9 3l-3 9H2',
   usuarios: 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z',
+  formularios: 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11',
+  links: 'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',
 };
 
 export default function ErpDashboardPage() {
@@ -37,6 +41,7 @@ export default function ErpDashboardPage() {
   const [tab, setTab] = useState<Modulo | null>(null);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [pendientesCount, setPendientesCount] = useState(0);
   const isDark = theme === 'dark';
   const t = makeTheme(isDark);
 
@@ -54,6 +59,11 @@ export default function ErpDashboardPage() {
         setMe(m);
         const hash = window.location.hash.replace('#', '') as Modulo;
         setTab(m.modulos.includes(hash) ? hash : m.modulos[0] ?? null);
+        if (m.modulos.includes('formularios')) {
+          api<{ total?: number; items?: any[] }>('/api/erp/formularios?estado=pendiente')
+            .then((res) => setPendientesCount(res.total ?? res.items?.length ?? 0))
+            .catch(() => {});
+        }
       })
       .catch(() => { escribirLS('stakeholders_user', null); router.replace('/admin/login'); });
     const onUnauth = () => { escribirLS('stakeholders_user', null); router.replace('/admin/login'); };
@@ -150,13 +160,21 @@ export default function ErpDashboardPage() {
                       <button onClick={() => { setTab(m.id); setMenuOpen(false); }} style={{
                         width: '100%', padding: '11px 14px', borderRadius: 12, textAlign: 'left', fontFamily: 'var(--mono)', fontSize: 11,
                         letterSpacing: '.14em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
-                        transition: 'all .2s', background: on ? 'rgba(61,107,255,0.18)' : 'transparent',
-                        border: on ? '1px solid rgba(61,107,255,0.5)' : '1px solid transparent', color: on ? t.text : t.subtext,
+                        transition: 'all .2s', background: on ? (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)') : 'transparent',
+                        border: '1px solid transparent', color: on ? t.text : t.subtext,
                       }}>
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, opacity: on ? 1 : 0.7 }}>
                           <path d={ICONOS[m.id]} />
                         </svg>
-                        {m.label}
+                        <span style={{ flex: 1 }}>{m.label}</span>
+                        {m.id === 'formularios' && pendientesCount > 0 && (
+                          <span style={{
+                            background: 'rgba(255,255,255,0.12)', color: t.text, fontFamily: 'var(--mono)', fontSize: 10,
+                            padding: '2px 7px', borderRadius: 999, fontWeight: 700,
+                          }}>
+                            {pendientesCount}
+                          </span>
+                        )}
                       </button>
                     </div>
                   );
@@ -217,6 +235,15 @@ export default function ErpDashboardPage() {
             {me && tab === 'compras' && <DocumentosPanel key="co" tipo="compra" />}
             {me && tab === 'ventas' && <DocumentosPanel key="ve" tipo="venta" />}
             {me && tab === 'leads' && <LeadsPanel esAdmin={admin} puedeClientes={me.modulos.includes('clientes')} />}
+            {me && tab === 'formularios' && (
+              <FormulariosPanel
+                puedeAprobar={puedeAprobar(me.rol)}
+                onVerCliente={(_clienteId) => {
+                  setTab('clientes');
+                }}
+              />
+            )}
+            {me && tab === 'links' && <LinksAgendaPanel esAdmin={admin} />}
             {me && tab === 'usuarios' && <UsuariosPanel yoId={me.id} soyDev={me.rol === 'desarrollador'} />}
           </div>
 

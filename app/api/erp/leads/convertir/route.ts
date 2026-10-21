@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { erpDb } from '@/lib/erp/db';
 import { handler, leerJson, ok, pick } from '@/lib/erp/http';
 import { HttpError, requerir } from '@/lib/erp/session';
+import { puedeAprobar } from '@/lib/erp/permisos';
 
 const CAMPOS_CLIENTE = ['tipo_persona', 'tipo_documento', 'numero_documento', 'dv', 'nombre', 'nombre_comercial',
   'email', 'telefono', 'direccion', 'ciudad', 'responsable_iva', 'dias_credito', 'notas'] as const;
@@ -9,11 +10,15 @@ const CAMPOS_CLIENTE = ['tipo_persona', 'tipo_documento', 'numero_documento', 'd
 /**
  * POST — convierte un lead en cliente.
  * body: { lead_id?, renta_lead_id?, cliente: {...} }
+ * Solo admin, desarrollador, contador (puedeAprobar).
  * Si ya existe un cliente con el mismo documento, se vincula en lugar de duplicarlo.
  */
 export const POST = handler(async (req: Request) => {
   const s = await requerir('leads');
-  await requerir('clientes').catch(() => { throw new HttpError(403, 'Tu rol no puede crear clientes'); });
+  if (!puedeAprobar(s.rol)) {
+    throw new HttpError(403, 'Solo administradores, desarrolladores y contadores pueden aprobar/convertir leads a clientes');
+  }
+
   const body = await leerJson<{ lead_id?: string; renta_lead_id?: string; cliente?: Record<string, unknown> }>(req);
   const datos = pick(body.cliente || {}, CAMPOS_CLIENTE);
   if (!datos.nombre) throw new HttpError(400, 'El nombre es obligatorio');

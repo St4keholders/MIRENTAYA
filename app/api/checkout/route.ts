@@ -49,7 +49,16 @@ async function saveOrderAsync(
   }
 }
 
+import { PAGOS_RENTA_ACTIVOS } from '@/lib/config';
+
 export async function POST(request: Request) {
+  if (!PAGOS_RENTA_ACTIVOS) {
+    return NextResponse.json(
+      { error: 'Los pagos en línea están temporalmente desactivados. Agenda tu cita directamente con un contador.' },
+      { status: 410 }
+    );
+  }
+
   try {
     const { customer_email, customer_name, customer_phone, lead_slug, lead_id } = await request.json();
 

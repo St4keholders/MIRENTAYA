@@ -1,64 +1,134 @@
-# Stakeholders · ERP + CRM
+# Stakeholders · ERP + CRM (Fase 4: Formularios, Links de Agenda y Seguridad)
 
-## Puesta en marcha (una sola vez)
+## Puesta en marcha
 
-1. **Base de datos.** En Supabase → SQL Editor, pega y ejecuta completo
-   `supabase/migrations/20261003_erp_crm.sql`. Es aditivo: no toca las tablas de renta
-   (`leads`, `ventas`, `orders`, `usuarios`…). Se puede ejecutar dos veces sin problema.
-2. **Variables de entorno.** El ERP usa `SUPABASE_SERVICE_ROLE_KEY`, que ya está en Vercel.
-   Opcional: crea `SESSION_SECRET` (cadena aleatoria de 32+ caracteres) para firmar las
-   sesiones; si no existe se usa la service role key.
-3. **Desplegar** la rama. Los usuarios existentes deben volver a iniciar sesión una vez
-   (la sesión ahora es una cookie segura, no `localStorage`).
+1. **Base de datos (Supabase):**
+   - Se aplican las migraciones:
+     - `supabase/migrations/20261003_erp_crm.sql` (Esquema base ERP/CRM y PUC colombiano).
+     - `supabase/migrations/20261022_formularios_agenda.sql` (Tablas `erp_links_agenda` y `erp_formularios` con RLS estricto).
+     - `20261021_security_lockdown.sql` (RLS habilitado en tablas legacy, revocación de permisos a `anon` y `authenticated`, tablas de rate limiting `erp_login_intentos` y `erp_form_intentos`).
+2. **Variables de entorno:**
+   - `NEXT_PUBLIC_SUPABASE_URL` / `SUPABASE_URL`: URL del proyecto Supabase.
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Llave pública anon.
+   - `SUPABASE_SERVICE_ROLE_KEY`: Llave administrativa (server-side ONLY).
+   - `SESSION_SECRET`: Clave HMAC obligatoria (mínimo 16 caracteres) para firma de sesiones de panel y ERP.
+   - `NEXT_PUBLIC_PAGOS_RENTA`: Control de cobro en pasarela Wompi (`true` o `false`, por defecto `false`).
+3. **Autenticación ERP:**
+   - Algoritmo seguro `scrypt` con salt individual por usuario en `lib/erp/password.ts`.
+   - Cookie segura HttpOnly `sh_session` protegida y validada en base de datos (`usuarios.activo = true`).
+   - Rate limiting de login: 5 intentos fallidos en 15 minutos por IP/usuario.
 
-## Rutas públicas
+---
 
-| Ruta | Qué es |
+## Rutas Públicas
+
+| Ruta | Descripción |
 |---|---|
-| `/` | Nuevo inicio: 4 servicios flotantes |
-| `/contabilidad`, `/nomina`, `/personalizado` | Páginas de servicio con formulario → crea un lead |
-| `/renta` | El landing anterior de renta, sin cambios (test, agendar, resultados, Wompi siguen igual) |
+| `/` | Portal de inicio con los 4 servicios principales flotantes |
+| `/renta` | Landing de declaración de renta. Modo sin pagos: captación directa hacia agendamiento con contador |
+| `/test` | Cuestionario y diagnóstico tributario (20 pasos) → resultado en `/r/[slug]` |
+| `/r/[slug]` | Resultado del diagnóstico y arquetipo. CTA principal: "Agenda tu cita con un contador" |
+| `/agendar` | Agendamiento directo general (`formulario = 'agendar'`) con calendario hábil y festivos colombianos |
+| `/agenda/[slug]` | Página de reserva por link personalizado de contador (`formulario = 'agenda_link'`) |
+| `/contabilidad` | Diagnóstico contable gratuito para empresas → registra formulario pendiente en CRM |
+| `/nomina` | Servicio de nómina electrónica y prestaciones |
+| `/personalizado` | Asesorías a la medida y requerimientos especiales DIAN |
+| `/colaboradores` | Modelo de negocio y simulador de comisiones para contadores y vendedores |
 
-## Panel (`/admin/dashboard`)
+---
 
-| Módulo | Función |
-|---|---|
-| Clientes | Terceros + cuentas por cobrar. Clic en un cliente → estado de cuenta, ventas, cobros |
-| Proveedores | Igual, cuentas por pagar |
-| Libro diario | Todos los asientos (partida doble, PUC). Filtros, saldos por cuenta, asiento manual, CSV |
-| Compras | Facturas de compra / gastos, pagos a proveedores |
-| Ventas | Facturas de venta, cobros |
-| Leads | Embudo comercial + importación de los leads del test de renta |
-| Usuarios | Alta, roles, activar/desactivar, cambio de contraseña |
+## Tablas Nuevas y Esquema de Agenda
 
-El panel anterior quedó archivado en `/admin/renta`.
+### `erp_links_agenda`
+Almacena los enlaces personalizados creados por los contadores o administradores para compartir con sus clientes.
+- `id` (UUID, PK)
+- `usuario_id` (UUID, FK a `usuarios.id`)
+- `slug` (text UNIQUE, ej: `carlos-renta-30m-abc1`)
+- `titulo` (text)
+- `servicio` (`renta`, `contabilidad`, `nomina`, `general`)
+- `duracion_minutos` (15, 30, 45, 60)
+- `activo` (boolean, default true)
+- `created_at` (timestamptz)
 
-### Contabilización automática
+### `erp_formularios`
+Bandeja centralizada de captación y aprobación de todos los formularios públicos y solicitudes de cita.
+- `id` (UUID, PK)
+- `tipo_formulario` (`contabilidad`, `nomina`, `personalizado`, `renta_cita`, `renta_resultado`, `agenda_link`, `agendar`)
+- `servicio` (`renta`, `contabilidad`, `nomina`, `personalizado`, `general`)
+- `nombre` (text)
+- `email` (text, nullable)
+- `telefono` (text)
+- `datos` (jsonb con respuestas detalladas: empresa, régimen, facturas/mes, etc.)
+- `estado` (`pendiente`, `aprobado`, `rechazado`, default `pendiente`)
+- `link_id` (UUID, nullable, FK a `erp_links_agenda.id`)
+- `asignado_a` (UUID, nullable, FK a `usuarios.id`)
+- `fecha_preferida` (date, nullable)
+- `hora_preferida` (text, nullable)
+- `notas` (text, nullable)
+- `cliente_id` (UUID, nullable, FK a `erp_clientes.id`)
+- `lead_id` (UUID, nullable, FK a `erp_leads.id`)
+- `created_at` (timestamptz)
 
-| Evento | Débito | Crédito |
-|---|---|---|
-| Venta | 1305 Clientes (neto) · 1355 Retención a favor | 4155 Ingresos · 2408 IVA |
-| Cobro | 1105/1110/1120 Caja o bancos | 1305 Clientes |
-| Compra | Cuenta de gasto elegida · 2408 IVA descontable | 2365 Retención por pagar · 2205 Proveedores |
-| Pago | 2205 Proveedores | Caja o bancos |
-| Anulación | Contra-asiento exacto del original (no se borra nada) | |
+---
 
-Un documento con pagos aplicados no se puede anular hasta anular sus pagos.
+## Flujos de Agenda y Captación
 
-### Permisos por rol
+1. **Links personalizados (`/agenda/[slug]`):**
+   - Consulta el link en `erp_links_agenda` donde `activo = true`.
+   - Selector de fecha omitiendo domingos y festivos colombianos (`lib/festivos.ts` basado en Ley Emiliani).
+   - Selector de horas: 8:00 AM a 6:00 PM (L-V) y 8:00 AM a 1:00 PM (Sábados). Excluye horas ya reservadas para ese profesional mediante `/api/public/disponibilidad`.
+   - Envío a `POST /api/public/cita`: crea registro en `citas` y en `erp_formularios` (`tipo_formulario = 'agenda_link'`).
+   - Pantalla de éxito con opción de botón para añadir a Google Calendar.
 
-| Rol | Módulos |
-|---|---|
-| admin, desarrollador | Todos |
-| contador | Todos menos Usuarios |
-| vendedor | Clientes, Ventas, Leads (solo sus leads) |
-| referido | Leads (solo sus leads) |
+2. **Agenda general (`/agendar`):**
+   - Misma experiencia visual que el link personalizado, pero asignado de forma general al equipo (`formulario = 'agendar'`).
 
-Los permisos se validan en el servidor (`lib/erp/permisos.ts`), no solo en la interfaz.
+3. **Cita desde test de renta (`/r/[slug]`):**
+   - Modal de agendamiento sin cobros de pasarela Wompi.
+   - Envía a `POST /api/public/cita` con `formulario: 'renta_resultado'` y el `lead_id` correspondiente.
 
-## Seguridad
+4. **Cita desde landing (`/renta`):**
+   - Modal lateral de agendamiento rápido con campos de Tipo de Consulta.
+   - Envía a `POST /api/public/cita` con `formulario: 'renta_cita'`.
 
-- Las tablas `erp_*` tienen RLS activado sin políticas: la clave anon pública no puede leerlas.
-- Toda la API `/api/erp/*` exige la cookie firmada `sh_session` (HttpOnly, 12 h).
-- Pendiente fuera de este alcance: las rutas antiguas `/api/admin/*` (usadas por `/admin/renta`)
-  siguen sin autenticación, igual que antes.
+5. **Formulario de contabilidad (`/contabilidad`):**
+   - Registra el prospecto con `formulario: 'contabilidad'`. Queda en estado `pendiente` en la bandeja del CRM.
+
+---
+
+## Sistema de Aprobación de Formularios
+
+- **Quién puede aprobar:** Usuarios con rol `admin` o `desarrollador` (`puedeAprobar(rol)` en `lib/erp/permisos.ts`).
+- **Qué sucede al aprobar (`POST /api/erp/formularios/aprobar`):**
+  1. Verifica permiso del usuario.
+  2. Si el formulario no tiene `cliente_id`, busca en `erp_clientes` por email o teléfono; si no existe, crea un nuevo cliente con tipo `persona` o `empresa`.
+  3. Si no tiene `lead_id`, busca o crea un lead comercial en `erp_leads` con etapa `ganado`.
+  4. Vincula `cliente_id` y `lead_id` en el registro de `erp_formularios`.
+  5. Actualiza el estado a `aprobado`.
+  6. Devuelve `{ ok: true, cliente_id, lead_id }`.
+
+---
+
+## Control de Pagos en Renta (`PAGOS_RENTA_ACTIVOS`)
+
+- En `lib/config.ts`:
+  ```ts
+  export const PAGOS_RENTA_ACTIVOS = process.env.NEXT_PUBLIC_PAGOS_RENTA === 'true';
+  ```
+- **Por defecto está en `false`:**
+  - Fuera de temporada de renta no se cobra pasarela Wompi.
+  - La ruta `/api/checkout` responde `410 Gone`.
+  - `/pagos/respuesta` redirige a `/renta`.
+  - La landing `/renta` y `/r/[slug]` enfocan el 100% de la conversión hacia agendamiento de cita con un contador y registro en el CRM.
+- **Reactivación:** En la siguiente temporada de renta activa, basta con configurar `NEXT_PUBLIC_PAGOS_RENTA=true` en el dashboard de Vercel.
+
+---
+
+## Seguridad y Hardening
+
+- **RLS activado:** 100% de tablas de usuario y de negocio (`leads`, `usuarios`, `ventas`, `orders`, `citas`, `respuestas`, `pipeline_leads`, `lead_requests`, `commissions`, `referral_events`, `app_settings`, `contadores`, `erp_*`).
+- **Anon despojado:** Permisos `SELECT, INSERT, UPDATE, DELETE` revocados de `anon` y `authenticated` en tablas privadas. La única tabla de lectura pública es `arquetipos`.
+- **Rutas `/api/admin/*` y `/api/pipeline`:** Todas protegidas mediante autenticación y verificación de sesión con permisos por rol.
+- **Rate limiting:** Implementado en memoria por IP y endpoint (máximo 5 solicitudes / 10 minutos para formularios públicos; 5 intentos / 15 min para login).
+- **Security Headers:** `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `Permissions-Policy`.
+- **Acceso equipo:** Enlace discreto en el pie de página de `/renta`, `/contabilidad`, `/nomina` y `/personalizado` hacia `/admin/login`.

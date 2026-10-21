@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { notFound } from 'next/navigation';
 import ResultClientView from './ResultClientView';
 
@@ -8,17 +8,17 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const supabase = supabaseAdmin();
 
   const { data: lead } = await supabase
     .from('leads')
     .select('nombre, arquetipos(nombre, tagline)')
     .eq('slug_publico', slug)
-    .single();
+    .maybeSingle();
 
   if (!lead) return { title: 'Resultado no encontrado | Renta 2026' };
 
-  const arq = lead.arquetipos as any;
+  const arq = lead.arquetipos as { nombre?: string; tagline?: string } | null;
   return {
     title: `${lead.nombre} es ${arq?.nombre || 'un Arquetipo Tributario'} | Renta 2026`,
     description: arq?.tagline || 'Descubre tu arquetipo financiero y si debes declarar renta ante la DIAN.',
@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function ResultPage({ params }: PageProps) {
   const { slug } = await params;
-  const supabase = await createClient();
+  const supabase = supabaseAdmin();
 
   // Fetch lead with arquetipo details
   const { data: lead, error } = await supabase
@@ -56,7 +56,7 @@ export default async function ResultPage({ params }: PageProps) {
       )
     `)
     .eq('slug_publico', slug)
-    .single();
+    .maybeSingle();
 
   if (error || !lead) {
     notFound();

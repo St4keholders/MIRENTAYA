@@ -174,7 +174,9 @@ export default function Landing() {
     setAgHoraSelected(slots.length > 0 ? slots[0] : '');
   };
 
-  // Submit appointment to Supabase via POST /api/agendar
+  const [agTipoConsulta, setAgTipoConsulta] = useState('Asesoría general');
+
+  // Submit appointment to Supabase via POST /api/public/cita
   const handleSubmitAgendar = async () => {
     setAgErr('');
 
@@ -203,49 +205,33 @@ export default function Landing() {
       const day = String(agDateSelected.getDate()).padStart(2, '0');
       const formattedDateStr = `${year}-${month}-${day}`;
 
-      // Disparar agendamiento y checkout en paralelo
-      const agendarPromise = fetch('/api/agendar', {
+      const res = await fetch('/api/public/cita', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          nombre: agNombre,
-          correo: agCorreo,
-          celular: agTel,
+          formulario: 'renta_cita',
+          servicio: 'renta',
+          nombre: agNombre.trim(),
+          correo: agCorreo.trim(),
+          telefono: agTel.trim(),
           fecha: formattedDateStr,
           hora: agHoraSelected || '08:00',
-          medio_contacto: agMedio,
-        }),
-      }).catch((err) => console.warn('[Landing] Error en agendar:', err));
-
-      const checkoutPromise = fetch('/api/checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customer_name: agNombre,
-          customer_email: agCorreo,
-          customer_phone: agTel,
+          notas: `Tipo de consulta: ${agTipoConsulta}. Método: ${agMedio}`,
         }),
       });
 
-      const [, checkoutRes] = await Promise.all([agendarPromise, checkoutPromise]);
-
-      if (checkoutRes && checkoutRes.ok) {
-        const dataCheckout = await checkoutRes.json();
-        if (dataCheckout.checkoutUrl) {
-          window.location.href = dataCheckout.checkoutUrl;
-          return;
-        }
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'No se pudo registrar la cita');
       }
 
-      const f = agDateSelected;
-      const fechaTexto = `${f.getDate()} de ${MESES_NOMBRES[f.getMonth()]} de ${f.getFullYear()}`;
-      const horaTexto = agHoraSelected ? ` a las ${agHoraSelected}` : '';
       setAgDoneTxt(
-        `Gracias, ${agNombre.trim().split(' ')[0]}. Cita registrada. Redirigiendo al pago...`
+        '¡Cita solicitada! Un contador del equipo te contactará por WhatsApp para confirmar fecha y hora.'
       );
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error enviando cita:', err);
-      setAgErr('Error de conexión. Por favor intenta de nuevo.');
+      const msg = err instanceof Error ? err.message : 'Error de conexión. Por favor intenta de nuevo.';
+      setAgErr(msg);
     } finally {
       setAgSubmitting(false);
     }
@@ -276,7 +262,7 @@ export default function Landing() {
     const meta =
       dias > 0
         ? `Faltan ${dias} días. Declaración y pago el mismo día.`
-        : 'Fecha ya vencida. Consulta con el equipo.';
+        : 'La temporada de renta regular ha finalizado. Si no declaraste a tiempo, aún puedes ponerte al día para evitar sanciones mayores. Agenda tu cita con un contador.';
     return `<div><p class="finder__cap">Tu fecha límite</p>
             <p class="finder__date">${+dia} de ${nombre}, 2026</p>
             <p class="finder__meta">${meta}</p></div>`;
@@ -670,10 +656,10 @@ export default function Landing() {
             onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--white)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.30)'; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = 'var(--dimmer)'; (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(255,255,255,0.10)'; }}
           >
-            Login
+            Acceso equipo
           </Link>
           <button className="pill" onClick={handleOpenAgendar}>
-            Agendar consulta
+            Agenda tu cita con un contador
           </button>
         </div>
       </header>
@@ -724,7 +710,7 @@ export default function Landing() {
                   Hacer el test →
                 </Link>
                 <button className="pill pill--ghost" onClick={handleOpenAgendar}>
-                  Agendar consulta
+                  Agenda tu cita con un contador
                 </button>
               </div>
             </div>
@@ -892,7 +878,7 @@ export default function Landing() {
                   </p>
                   <p>
                     <button className="pill" onClick={handleOpenAgendar} style={{ marginTop: 16 }}>
-                      Agendar una consultoría
+                      Agenda tu cita con un contador
                     </button>
                   </p>
                 </article>
@@ -926,11 +912,18 @@ export default function Landing() {
       {/* FOOTER */}
       <footer className="foot">
         <p>Estimación orientativa. No es asesoría tributaria. Stakeholders 2026.</p>
-        <nav>
+        <nav style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <a href="#top">Consultar</a>
           <button type="button" className="foot__link" onClick={handleOpenAgendar}>
             Agendar
           </button>
+          <Link
+            href="/admin/login"
+            className="foot__link"
+            style={{ opacity: 0.6, fontSize: 11, fontFamily: 'var(--mono)', textDecoration: 'none' }}
+          >
+            Acceso equipo
+          </Link>
         </nav>
       </footer>
 
@@ -1066,11 +1059,24 @@ export default function Landing() {
               </label>
 
               <label className="fld">
+                <span>Tipo de consulta</span>
+                <select
+                  id="ag-tipo"
+                  value={agTipoConsulta}
+                  onChange={(e) => setAgTipoConsulta(e.target.value)}
+                >
+                  <option value="Asesoría general">Asesoría general</option>
+                  <option value="Declaración extemporánea">Declaración extemporánea</option>
+                  <option value="Planeación 2026">Planeación 2026</option>
+                </select>
+              </label>
+
+              <label className="fld">
                 <span>Método de contacto</span>
                 <select
                   id="ag-medio"
                   value={agMedio}
-                  onChange={(e) => setAgMedio(e.target.value as any)}
+                  onChange={(e) => setAgMedio(e.target.value as 'llamada' | 'videollamada' | 'whatsapp')}
                 >
                   <option value="llamada">Llamada</option>
                   <option value="videollamada">Reunión virtual</option>

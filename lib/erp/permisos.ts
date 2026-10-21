@@ -8,7 +8,9 @@ export type Modulo =
   | 'libro'
   | 'compras'
   | 'ventas'
+  | 'formularios'
   | 'leads'
+  | 'links'
   | 'usuarios';
 
 export const MODULOS: Array<{ id: Modulo; label: string; titulo: string; eyebrow: string }> = [
@@ -17,18 +19,20 @@ export const MODULOS: Array<{ id: Modulo; label: string; titulo: string; eyebrow
   { id: 'libro', label: 'Libro Diario', titulo: 'Libro Diario', eyebrow: 'Contabilidad' },
   { id: 'compras', label: 'Compras', titulo: 'Compras', eyebrow: 'Operación' },
   { id: 'ventas', label: 'Ventas', titulo: 'Ventas', eyebrow: 'Operación' },
+  { id: 'formularios', label: 'Formularios', titulo: 'Formularios', eyebrow: 'CRM' },
   { id: 'leads', label: 'Leads', titulo: 'Leads', eyebrow: 'CRM' },
+  { id: 'links', label: 'Mis links', titulo: 'Mis links de agenda', eyebrow: 'CRM' },
   { id: 'usuarios', label: 'Usuarios', titulo: 'Usuarios y Permisos', eyebrow: 'Configuración' },
 ];
 
-const TODOS: Modulo[] = ['clientes', 'proveedores', 'libro', 'compras', 'ventas', 'leads', 'usuarios'];
+const TODOS: Modulo[] = ['clientes', 'proveedores', 'libro', 'compras', 'ventas', 'formularios', 'leads', 'links', 'usuarios'];
 
 export const PERMISOS: Record<Rol, Modulo[]> = {
   desarrollador: TODOS,
   admin: TODOS,
-  contador: ['clientes', 'proveedores', 'libro', 'compras', 'ventas', 'leads'],
-  vendedor: ['clientes', 'ventas', 'leads'],
-  referido: ['leads'],
+  contador: ['clientes', 'proveedores', 'libro', 'compras', 'ventas', 'formularios', 'leads', 'links'],
+  vendedor: ['clientes', 'ventas', 'formularios', 'leads', 'links'],
+  referido: ['formularios', 'leads', 'links'],
 };
 
 export function normalizarRol(rol: string | null | undefined): Rol | null {
@@ -42,6 +46,11 @@ export function normalizarRol(rol: string | null | undefined): Rol | null {
 export function puede(rol: string | null | undefined, modulo: Modulo): boolean {
   const r = normalizarRol(rol);
   return r ? PERMISOS[r].includes(modulo) : false;
+}
+
+export function puedeAprobar(rol: string | null | undefined): boolean {
+  const r = normalizarRol(rol);
+  return r === 'admin' || r === 'desarrollador' || r === 'contador';
 }
 
 export function esAdmin(rol: string | null | undefined): boolean {

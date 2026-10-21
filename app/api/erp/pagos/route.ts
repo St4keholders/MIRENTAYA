@@ -22,12 +22,18 @@ export const POST = handler(async (req: Request) => {
 
 /* PATCH — { id, accion: 'anular', motivo } */
 export const PATCH = handler(async (req: Request) => {
+  // Verificar sesión antes de cualquier consulta
+  const s = await requerir();
   const body = await leerJson<{ id?: string; accion?: string; motivo?: string }>(req);
   if (!body.id || body.accion !== 'anular') throw new HttpError(400, 'Petición inválida');
+
   const db = erpDb();
   const pago = ok(await db.from('erp_pagos').select('tipo').eq('id', body.id).maybeSingle()) as { tipo: string } | null;
   if (!pago) throw new HttpError(404, 'Pago no encontrado');
-  const s = await requerir(pago.tipo === 'cobro' ? 'ventas' : 'compras');
+
+  // Validar permisos específicos del módulo según el tipo de pago
+  await requerir(pago.tipo === 'cobro' ? 'ventas' : 'compras');
+
   ok(await db.rpc('erp_anular_pago', { p_id: body.id, p_usuario: s.id, p_motivo: body.motivo || null }));
   return NextResponse.json({ success: true });
 });

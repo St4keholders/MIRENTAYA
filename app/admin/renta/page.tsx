@@ -173,21 +173,26 @@ export default function AdminRentaArchivoPage() {
     modalBg: isDark ? '#101014' : '#FFFFFF',
   };
 
-  /* Check User session on load */
+  /* Check User session on load via /api/erp/me */
   useEffect(() => {
-    const raw = localStorage.getItem('stakeholders_user');
-    if (raw) {
-      try {
-        const parsed: UserSession = JSON.parse(raw);
-        setCurrentUser(parsed);
-      } catch {
+    fetch('/api/erp/me')
+      .then((r) => {
+        if (!r.ok) throw new Error('Unauth');
+        return r.json();
+      })
+      .then((json) => {
+        if (json?.data) {
+          setCurrentUser(json.data);
+          localStorage.setItem('stakeholders_user', JSON.stringify(json.data));
+        } else {
+          throw new Error('Unauth');
+        }
+      })
+      .catch(() => {
         localStorage.removeItem('stakeholders_user');
         router.replace('/admin/login');
-      }
-    } else {
-      router.replace('/admin/login');
-    }
-  }, []);
+      });
+  }, [router]);
 
   /* Star Canvas background */
   useEffect(() => {
@@ -259,7 +264,12 @@ export default function AdminRentaArchivoPage() {
   }, [currentUser]);
 
   /* Actions */
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/erp/logout', { method: 'POST' });
+    } catch {
+      // ignore
+    }
     localStorage.removeItem('stakeholders_user');
     router.push('/admin/login');
   };

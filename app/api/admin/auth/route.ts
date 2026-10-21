@@ -1,54 +1,144 @@
 import { NextResponse } from 'next/server';
 import { createHash } from 'crypto';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase-admin';
 import { crearToken, setSessionCookie } from '@/lib/erp/session';
+import { verifyPassword, hashPasswordScrypt } from '@/lib/erp/password';
 
-function hashPwd(pwd: string) {
-  return createHash('sha256').update(pwd + 'stakeholders2026').digest('hex');
+function getClientIp(req: Request): string {
+  const forwarded = req.headers.get('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0].trim();
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp) return realIp.trim();
+  return '127.0.0.1';
 }
 
-const SUPABASE_URL = 'https://cllpslpejubqqdgnkisf.supabase.co';
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNsbHBzbHBlanVicXFkZ25raXNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ1NTAwNzgsImV4cCI6MjEwMDEyNjA3OH0.NWBADZJfBIP8XTG4iMMEDug43msf0OlZze7riBD-96s';
+function hashIp(ip: string): string {
+  const salt = process.env.SESSION_SECRET || 'stakeholders_ip_salt';
+  return createHash('sha256').update(ip + salt).digest('hex');
+}
 
-/* POST /api/admin/auth — login via SECURITY DEFINER RPC (bypassa RLS) */
 export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
-    if (!email || !password)
-      return NextResponse.json({ error: 'Credenciales requeridas' }, { status: 400 });
+    if (!email || !password) {
+      return NextResponse.json({ error: 'Correo o contraseña incorrectos' }, { status: 400 });
+    }
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || SUPABASE_URL;
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
-    const supabase = createClient(url, anonKey, { auth: { persistSession: false } });
+    const normalizedEmail = String(email).toLowerCase().trim();
+    const ip = getClientIp(request);
+    const ipHash = hashIp(ip);
 
-    // Llama a la función SQL SECURITY DEFINER que bypassa RLS
-    const { data, error } = await supabase.rpc('authenticate_user', {
-      p_email: email.toLowerCase().trim(),
-      p_password_hash: hashPwd(password),
+    const supabase = supabaseAdmin();
+    const quinceMinutosAtras = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+
+    // 1. Validar límite de intentos fallidos (máximo 5 por email o IP en 15 minutos)
+    const { count: fallosEmail } = await supabase
+      .from('erp_login_intentos')
+      .select('id', { count: 'exact', head: true })
+      .eq('email', normalizedEmail)
+      .eq('exito', false)
+      .gte('created_at', quinceMinutosAtras);
+
+    const { count: fallosIp } = await supabase
+      .from('erp_login_intentos')
+      .select('id', { count: 'exact', head: true })
+      .eq('ip_hash', ipHash)
+      .eq('exito', false)
+      .gte('created_at', quinceMinutosAtras);
+
+    if ((fallosEmail ?? 0) >= 5 || (fallosIp ?? 0) >= 5) {
+      return NextResponse.json(
+        { error: 'Demasiados intentos. Espera 15 minutos.' },
+        { status: 429 }
+      );
+    }
+
+    // 2. Buscar usuario por email con service_role en el servidor
+    const { data: usuario, error: userError } = await supabase
+      .from('usuarios')
+      .select('id, nombre, email, rol, activo, password_hash, password_algo, referral_slug, phone')
+      .eq('email', normalizedEmail)
+      .maybeSingle();
+
+    if (userError || !usuario || !usuario.activo) {
+      // Registrar intento fallido
+      await supabase.from('erp_login_intentos').insert({
+        email: normalizedEmail,
+        ip_hash: ipHash,
+        exito: false,
+      });
+      return NextResponse.json({ error: 'Correo o contraseña incorrectos' }, { status: 401 });
+    }
+
+    if (!usuario.password_hash) {
+      await supabase.from('erp_login_intentos').insert({
+        email: normalizedEmail,
+        ip_hash: ipHash,
+        exito: false,
+      });
+      return NextResponse.json({ error: 'Correo o contraseña incorrectos' }, { status: 401 });
+    }
+
+    // 3. Verificar contraseña (scrypt con migración transparente de sha256_v1)
+    const { valid, needsRehash } = await verifyPassword(
+      password,
+      usuario.password_hash,
+      usuario.password_algo
+    );
+
+    if (!valid) {
+      await supabase.from('erp_login_intentos').insert({
+        email: normalizedEmail,
+        ip_hash: ipHash,
+        exito: false,
+      });
+      return NextResponse.json({ error: 'Correo o contraseña incorrectos' }, { status: 401 });
+    }
+
+    // 4. Registrar intento exitoso
+    await supabase.from('erp_login_intentos').insert({
+      email: normalizedEmail,
+      ip_hash: ipHash,
+      exito: true,
     });
 
-    if (error) {
-      console.error('[auth] RPC error:', error.message);
-      return NextResponse.json({ error: 'Error interno al autenticar' }, { status: 500 });
+    // 5. Migración transparente a scrypt si correspondía
+    if (needsRehash) {
+      try {
+        const newHash = await hashPasswordScrypt(password);
+        await supabase
+          .from('usuarios')
+          .update({ password_hash: newHash, password_algo: 'scrypt_v1' })
+          .eq('id', usuario.id);
+      } catch (rehashErr) {
+        console.error('[auth] Error al rehashear a scrypt:', rehashErr);
+      }
     }
 
-    // La función SQL devuelve { error: "..." } o { success: true, user: {...} }
-    if (data?.error) {
-      return NextResponse.json({ error: data.error }, { status: 401 });
-    }
+    // 6. Preparar objeto de usuario seguro (sin password_hash ni password_algo)
+    const safeUser = {
+      id: usuario.id,
+      nombre: usuario.nombre,
+      email: usuario.email,
+      rol: usuario.rol,
+      referral_slug: usuario.referral_slug,
+      phone: usuario.phone,
+    };
 
-    const res = NextResponse.json({ success: true, user: data.user });
-    // Sesión segura (cookie HttpOnly firmada) para el ERP
+    const isHttps = request.url.startsWith('https://');
+    const res = NextResponse.json({ success: true, user: safeUser });
+
+    // 7. Crear cookie HttpOnly firmada sh_session
     try {
-      const token = data.user ? crearToken(data.user) : null;
-      if (token) setSessionCookie(res, token);
-    } catch (e) {
-      console.error('[auth] No se pudo crear la sesión del ERP:', e);
+      const token = crearToken(safeUser);
+      if (token) setSessionCookie(res, token, isHttps);
+    } catch (tokenErr) {
+      console.error('[auth] Error creando sesión:', tokenErr);
     }
+
     return res;
   } catch (err) {
-    console.error('[auth] Error:', err);
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 });
+    console.error('[auth] Error en proceso de login:', err);
+    return NextResponse.json({ error: 'Correo o contraseña incorrectos' }, { status: 500 });
   }
 }

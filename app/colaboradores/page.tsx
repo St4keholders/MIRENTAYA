@@ -837,8 +837,30 @@ export default function ColaboradoresPage() {
           </div>
 
           <p style={{ fontSize: 13, color: 'var(--dim)', marginTop: 26, textAlign: 'center', lineHeight: 1.5 }}>
-            La consultoría de $100.000 se cobra aparte y no entra en este reparto.
+            La asesoría personalizada se coordina directamente con el equipo y no entra en este reparto.
           </p>
+
+          <div style={{ marginTop: 36, textAlign: 'center' }}>
+            <Link
+              href="/agendar"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '14px 28px',
+                borderRadius: 999,
+                background: 'linear-gradient(135deg,#3D6BFF,#6B8FFF)',
+                color: '#FFFFFF',
+                fontFamily: 'var(--display)',
+                fontWeight: 700,
+                fontSize: 15,
+                textDecoration: 'none',
+                boxShadow: '0 4px 24px -4px rgba(61,107,255,0.45)',
+              }}
+            >
+              Agenda una reunión con nuestro equipo →
+            </Link>
+          </div>
         </section>
       </main>
 

@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import '@/app/stakeholders.css';
+import { PAGOS_RENTA_ACTIVOS } from '@/lib/config';
 
 function RespuestaContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const reference = searchParams.get('reference') || searchParams.get('id');
 
@@ -12,6 +14,10 @@ function RespuestaContent() {
   const [order, setOrder] = useState<any>(null);
 
   useEffect(() => {
+    if (!PAGOS_RENTA_ACTIVOS && !reference) {
+      router.replace('/renta');
+      return;
+    }
     if (!reference) {
       setLoading(false);
       return;
