@@ -3,6 +3,7 @@ import { erpDb } from '@/lib/erp/db';
 import { handler, leerJson, ok } from '@/lib/erp/http';
 import { HttpError, requerir } from '@/lib/erp/session';
 import { normalizarRol } from '@/lib/erp/permisos';
+import { dispararWorker } from '@/lib/erp/prospeccion-server';
 import { CON_WEBSITE, FUENTES, type ConWebsite, type Fuente } from '@/lib/erp/prospeccion';
 
 const SERVICIOS = ['contabilidad', 'nomina', 'renta', 'personalizado', 'otro'];
@@ -59,25 +60,8 @@ export const POST = handler(async (req: Request) => {
     .select('*')
     .single());
 
-  // Arranque inmediato opcional: si existe un token de GitHub, dispara el workflow
-  // en vez de esperar al siguiente ciclo programado (cada 10 min).
-  const token = process.env.GITHUB_DISPATCH_TOKEN;
-  const repo = process.env.GITHUB_REPO || 'St4keholders/MIRENTAYA';
-  let inmediato = false;
-  if (token) {
-    try {
-      const r = await fetch(`https://api.github.com/repos/${repo}/actions/workflows/prospeccion.yml/dispatches`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json' },
-        body: JSON.stringify({ ref: process.env.GITHUB_DISPATCH_REF || 'main' }),
-        signal: AbortSignal.timeout(5000),
-      });
-      inmediato = r.ok;
-      if (!r.ok) console.error('[prospeccion] GitHub respondió', r.status);
-    } catch (e) {
-      console.error('[prospeccion] No se pudo disparar el workflow:', e);
-    }
-  }
+  // Arranque inmediato (si hay token); si no, la toma el ciclo programado
+  const inmediato = await dispararWorker();
 
   return NextResponse.json({ data: row, inmediato });
 });

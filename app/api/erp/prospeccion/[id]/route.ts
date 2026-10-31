@@ -3,6 +3,7 @@ import { erpDb } from '@/lib/erp/db';
 import { handler, leerJson, ok } from '@/lib/erp/http';
 import { HttpError, requerir } from '@/lib/erp/session';
 import { normalizarRol } from '@/lib/erp/permisos';
+import { dispararWorker } from '@/lib/erp/prospeccion-server';
 
 const UUID = /^[0-9a-f-]{36}$/i;
 
@@ -31,7 +32,8 @@ export const PATCH = handler(async (req: Request, ctx: { params: Promise<{ id: s
       .update({ estado: 'pendiente', error: null, started_at: null, finished_at: null })
       .eq('id', id).in('estado', ['error', 'cancelada']).select('*').maybeSingle());
     if (!row) throw new HttpError(409, 'Solo se pueden reintentar búsquedas con error o canceladas');
-    return NextResponse.json({ data: row });
+    const inmediato = await dispararWorker();
+    return NextResponse.json({ data: row, inmediato });
   }
   throw new HttpError(400, 'Acción no válida');
 });
