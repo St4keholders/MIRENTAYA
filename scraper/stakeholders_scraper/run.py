@@ -218,13 +218,24 @@ def main() -> int:
 
     sb = Supabase()
     recuperar_colgadas(sb)
-    pendientes = sb.select("erp_prospeccion_busquedas", select="*", estado="eq.pendiente",
-                           order="created_at.asc", limit=str(args.max))
-    if args.hay_cola:
-        print(f"pendientes={len(pendientes)}")
-        return 0 if pendientes else 1
+    def siguiente():
+        filas = sb.select("erp_prospeccion_busquedas", select="*", estado="eq.pendiente",
+                          order="created_at.asc", limit="1")
+        return filas[0] if filas else None
 
-    for b in pendientes:
+    if args.hay_cola:
+        hay = siguiente() is not None
+        print(f"hay_cola={hay}")
+        return 0 if hay else 1
+
+    # Se vuelve a mirar la cola después de cada búsqueda: así también se procesan
+    # las que se crean mientras el worker ya está trabajando.
+    procesadas = 0
+    while procesadas < args.max:
+        b = siguiente()
+        if not b:
+            break
+        procesadas += 1
         # Reclamar la búsqueda (si otro proceso la tomó, el update no devuelve filas)
         tomada = sb.update("erp_prospeccion_busquedas", {"id": f"eq.{b['id']}", "estado": "eq.pendiente"},
                            {"estado": "procesando", "started_at": AHORA()})
@@ -236,8 +247,8 @@ def main() -> int:
             log.exception("Búsqueda %s falló", b["id"])
             sb.update("erp_prospeccion_busquedas", {"id": f"eq.{b['id']}"},
                       {"estado": "error", "error": str(e)[:1000], "finished_at": AHORA()})
+    log.info("Cola revisada: %d búsquedas procesadas", procesadas)
     return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())
