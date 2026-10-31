@@ -53,7 +53,7 @@ export default function ProspeccionPanel({ esAdmin }: { esAdmin: boolean }) {
             <div style={{ fontWeight: 700, color: t.text, marginBottom: 4 }}>Encuentra empresas que necesitan un contador</div>
             <span style={{ fontSize: 12, color: t.subtext, lineHeight: 1.5 }}>
               Lanza una búsqueda por ciudad y tipo de negocio. Un proceso en segundo plano revisa Google Maps, directorios y los sitios web
-              de las empresas, y deja aquí los contactos ordenados por puntaje. Arranca en máximo 10 minutos.
+              de las empresas, y deja aquí los contactos ordenados por puntaje. Arranca en segundos y una búsqueda de 20 leads tarda unos 3 minutos.
             </span>
           </div>
           <Btn variant="primary" onClick={() => setNueva(true)}>+ Nueva búsqueda</Btn>
@@ -321,7 +321,7 @@ function NuevaBusquedaModal({ onClose, onCreada }: { onClose: () => void; onCrea
       const r = await api<{ inmediato?: boolean } & BusquedaProspeccion>('/api/erp/prospeccion', {
         method: 'POST', body: { ciudad, tipo_negocio: tipo, con_website: web, fuentes, limite: Number(limite), servicio },
       });
-      notify(r && (r as { inmediato?: boolean }).inmediato ? 'Búsqueda iniciada' : 'Búsqueda en cola: arranca en máximo 10 minutos');
+      notify(r && (r as { inmediato?: boolean }).inmediato ? 'Búsqueda iniciada: resultados en unos minutos' : 'Búsqueda en cola: arranca en máximo 10 minutos');
       setTipo('');
       onCreada();
     } catch (e) { setErr((e as Error).message); }
