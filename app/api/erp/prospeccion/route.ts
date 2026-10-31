@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { erpDb } from '@/lib/erp/db';
 import { handler, leerJson, ok } from '@/lib/erp/http';
 import { HttpError, requerir } from '@/lib/erp/session';
+import { normalizarRol } from '@/lib/erp/permisos';
 import { CON_WEBSITE, FUENTES, type ConWebsite, type Fuente } from '@/lib/erp/prospeccion';
 
 const SERVICIOS = ['contabilidad', 'nomina', 'renta', 'personalizado', 'otro'];
@@ -11,13 +12,17 @@ const texto = (v: unknown, max: number) =>
   typeof v === 'string' ? v.replace(/[\u0000-\u001f<>]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max) : '';
 
 /** Lista las últimas búsquedas con sus conteos. */
+const soloPropias = (rol: string) => ['vendedor', 'referido'].includes(normalizarRol(rol) || '');
+
 export const GET = handler(async () => {
-  await requerir('prospeccion');
-  const data = ok(await erpDb()
+  const s = await requerir('prospeccion');
+  let query = erpDb()
     .from('erp_prospeccion_busquedas')
     .select('*, creador:usuarios!erp_prospeccion_busquedas_creado_por_fkey(id,nombre)')
     .order('created_at', { ascending: false })
-    .limit(50));
+    .limit(50);
+  if (soloPropias(s.rol)) query = query.eq('creado_por', s.id);
+  const data = ok(await query);
   return NextResponse.json({ data });
 });
 

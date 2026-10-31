@@ -33,7 +33,7 @@ export const PERMISOS: Record<Rol, Modulo[]> = {
   desarrollador: TODOS,
   admin: TODOS,
   contador: ['clientes', 'proveedores', 'libro', 'compras', 'ventas', 'formularios', 'leads', 'prospeccion', 'links'],
-  vendedor: ['clientes', 'ventas', 'formularios', 'leads', 'links'],
+  vendedor: ['clientes', 'ventas', 'formularios', 'leads', 'prospeccion', 'links'],
   referido: ['formularios', 'leads', 'links'],
 };
 
