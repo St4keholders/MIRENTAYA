@@ -27,9 +27,9 @@ jobs:
       run:
         working-directory: scraper
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
@@ -54,4 +54,4 @@ jobs:
 
       - name: Procesar búsquedas
         if: steps.cola.outputs.hay == '1'
-        run: python -m stakeholders_scraper.run --max 3
+        run: python -m stakeholders_scraper.run --max 6
