@@ -3,9 +3,12 @@ import { erpDb } from '@/lib/erp/db';
 import { handler, leerJson, likeSeguro, ok, pick } from '@/lib/erp/http';
 import { esAdmin, normalizarRol } from '@/lib/erp/permisos';
 import { HttpError, requerir, type Sesion } from '@/lib/erp/session';
+import { normalizarEmail, normalizarTelefonoCO } from '@/lib/erp/prospeccion';
 
 const CAMPOS = ['nombre', 'empresa', 'email', 'telefono', 'servicio', 'origen', 'estado',
-  'valor_estimado', 'mensaje', 'notas', 'responsable_id'] as const;
+  'valor_estimado', 'mensaje', 'notas', 'responsable_id', 'ciudad', 'red_principal'] as const;
+const ORIGENES = ['manual', 'web', 'referido', 'renta_test', 'whatsapp', 'scraping', 'otro'];
+const UUID = /^[0-9a-f-]{36}$/i;
 
 /** Vendedores y referidos solo ven/gestionan sus propios leads */
 const soloPropios = (s: Sesion) => {
@@ -16,6 +19,9 @@ const soloPropios = (s: Sesion) => {
 function limpiar(body: Record<string, unknown>) {
   const d = pick(body, CAMPOS);
   if ('valor_estimado' in d) d.valor_estimado = d.valor_estimado == null ? null : Number(d.valor_estimado) || 0;
+  // Claves normalizadas para deduplicar contra lo que trae el scraper
+  if ('telefono' in d) d.telefono_norm = normalizarTelefonoCO(d.telefono as string | null)?.numero ?? null;
+  if ('email' in d) d.email_norm = normalizarEmail(d.email as string | null);
   return d;
 }
 
@@ -30,6 +36,11 @@ export const GET = handler(async (req: Request) => {
   if (estado && estado !== 'todos') query = query.eq('estado', estado);
   const servicio = p.get('servicio');
   if (servicio && servicio !== 'todos') query = query.eq('servicio', servicio);
+  const origen = p.get('origen');
+  if (origen && ORIGENES.includes(origen)) query = query.eq('origen', origen);
+  const busqueda = p.get('busqueda');
+  if (busqueda && UUID.test(busqueda)) query = query.eq('busqueda_id', busqueda);
+  if (p.get('excluidos') !== '1') query = query.eq('opt_out', false);
   const q = likeSeguro(p.get('q') || '');
   if (q) query = query.or(`nombre.ilike.%${q}%,empresa.ilike.%${q}%,email.ilike.%${q}%,telefono.ilike.%${q}%`);
   const data = ok(await query.limit(2000));

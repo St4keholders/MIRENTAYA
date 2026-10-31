@@ -11,24 +11,8 @@ export async function GET() {
       .eq('activo', true);
 
     if (error) {
-      // Return seed defaults if empty
-      return NextResponse.json({
-        contadores: [
-          { id: 1, nombre: 'Carlos Pérez', credencial: 'TP 184590-T', especialidad: 'Tributaria Personas Naturales' },
-          { id: 2, nombre: 'Maria Rodríguez', credencial: 'TP 201482-T', especialidad: 'Deducciones y Patrimonio' },
-          { id: 3, nombre: 'Andrés Gómez', credencial: 'TP 229104-T', especialidad: 'Planeación Fiscal' },
-        ],
-      });
-    }
-
-    if (!contadores || contadores.length === 0) {
-      return NextResponse.json({
-        contadores: [
-          { id: 1, nombre: 'Carlos Pérez', credencial: 'TP 184590-T', especialidad: 'Tributaria Personas Naturales' },
-          { id: 2, nombre: 'Maria Rodríguez', credencial: 'TP 201482-T', especialidad: 'Deducciones y Patrimonio' },
-          { id: 3, nombre: 'Andrés Gómez', credencial: 'TP 229104-T', especialidad: 'Planeación Fiscal' },
-        ],
-      });
+      console.error('Error consultando contadores:', error);
+      return NextResponse.json({ contadores: [] });
     }
 
     return NextResponse.json({ contadores });

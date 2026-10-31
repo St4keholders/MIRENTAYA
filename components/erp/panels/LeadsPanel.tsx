@@ -12,7 +12,7 @@ const ESTADOS: Array<[Lead['estado'], string, Tone]> = [
   ['nuevo', 'Nuevo', 'sky'], ['contactado', 'Contactado', 'blue'], ['propuesta', 'Propuesta', 'yellow'],
   ['ganado', 'Ganado', 'green'], ['perdido', 'Perdido', 'gray'],
 ];
-const ORIGEN: Record<string, string> = { manual: 'Manual', web: 'Sitio web', referido: 'Referido', renta_test: 'Test de renta', whatsapp: 'WhatsApp', otro: 'Otro' };
+const ORIGEN: Record<string, string> = { manual: 'Manual', web: 'Sitio web', referido: 'Referido', renta_test: 'Test de renta', whatsapp: 'WhatsApp', scraping: 'Prospección', otro: 'Otro' };
 
 const waLink = (tel: string) => `https://wa.me/${tel.replace(/\D/g, '').replace(/^(?!57)(\d{10})$/, '57$1')}`;
 

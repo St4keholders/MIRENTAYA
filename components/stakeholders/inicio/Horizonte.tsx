@@ -155,7 +155,10 @@ export default function Horizonte() {
       <footer className="hz-pie">
         <span>Stakeholders 2026 · Colombia</span>
         <span className="hz-pie__const" aria-hidden="true">{'STAKEHOLDERS'.split('').map((c, i) => <i key={i}>{c}</i>)}</span>
-        <Link href="/admin/login">Acceso equipo</Link>
+        <Link href="/admin/login" className="hz-acceso" title="Ingreso al ERP para contadores de Stakeholders">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+          Acceso contadores
+        </Link>
       </footer>
 
       <aside className={`hz-tarjeta ${abierta ? 'is-on' : ''}`} aria-hidden={!abierta} role="region" aria-label={s.t}>

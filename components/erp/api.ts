@@ -120,6 +120,34 @@ export interface Lead {
   created_at: string;
   responsable?: { id: string; nombre: string } | null;
   cliente?: { id: string; nombre: string } | null;
+  // Prospección (origen = 'scraping')
+  ciudad?: string | null;
+  red_principal?: string | null;
+  puntaje?: number | null;
+  datos?: import('@/lib/erp/prospeccion').DatosProspecto | null;
+  busqueda_id?: string | null;
+  fuente_url?: string | null;
+  fecha_captura?: string | null;
+  opt_out?: boolean;
+}
+
+export interface BusquedaProspeccion {
+  id: string;
+  ciudad: string;
+  tipo_negocio: string;
+  con_website: 'si' | 'no' | 'indiferente';
+  fuentes: string[];
+  limite: number;
+  servicio: string;
+  estado: 'pendiente' | 'procesando' | 'completada' | 'error' | 'cancelada';
+  total_encontrados: number;
+  total_nuevos: number;
+  total_duplicados: number;
+  error: string | null;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+  creador?: { id: string; nombre: string } | null;
 }
 
 export interface RentaLead {
