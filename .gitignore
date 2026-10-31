@@ -45,3 +45,8 @@ PLAN-NEXTJS-STAKEHOLDERS.md
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python (scraper)
+__pycache__/
+*.pyc
+.pytest_cache/

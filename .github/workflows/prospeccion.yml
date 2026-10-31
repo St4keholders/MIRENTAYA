@@ -1,0 +1,57 @@
+name: Prospección de leads
+
+# Revisa la cola de búsquedas del ERP (erp_prospeccion_busquedas) cada 10 min.
+# Si no hay pendientes termina en segundos y no instala nada.
+# Necesita dos secrets del repo: SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: prospeccion
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  procesar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    defaults:
+      run:
+        working-directory: scraper
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: ¿Hay búsquedas en cola?
+        id: cola
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+            echo "Faltan los secrets SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY" >&2
+            exit 1
+          fi
+          if python -m stakeholders_scraper.run --hay-cola; then
+            echo "hay=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "hay=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Instalar Scrapling y navegador
+        if: steps.cola.outputs.hay == '1'
+        run: |
+          pip install -r requirements.txt
+          scrapling install
+
+      - name: Procesar búsquedas
+        if: steps.cola.outputs.hay == '1'
+        run: python -m stakeholders_scraper.run --max 3

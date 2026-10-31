@@ -138,6 +138,9 @@
 .hz-pie { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; align-items: center; padding: 10px 32px 12px; font-size: 11.5px; color: #5E6F96; z-index: 30; }
 .hz-pie a { color: #5E6F96; text-decoration: none; }
 .hz-pie a:hover { color: var(--hz-hielo); }
+.hz-pie .hz-acceso { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 999px; border: 1px solid rgba(143,166,216,.35); background: rgba(10,16,32,.45); color: #A9BCE6; font-weight: 500; letter-spacing: .01em; transition: border-color .2s, color .2s, background .2s; }
+.hz-pie .hz-acceso:hover, .hz-pie .hz-acceso:focus-visible { color: var(--hz-hielo); border-color: rgba(207,224,255,.7); background: rgba(20,32,64,.6); outline: none; }
+.hz-pie .hz-acceso svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .hz-pie__const { font: 600 11px var(--hz-display); color: #8FA6D8; display: flex; gap: .55em; letter-spacing: .5em; }
 .hz-pie__const i { font-style: normal; position: relative; }
 .hz-pie__const i::after { content: ''; position: absolute; left: 50%; top: -5px; width: 2px; height: 2px; border-radius: 50%; background: #CFE0FF; box-shadow: 0 0 4px #8FB3FF; }

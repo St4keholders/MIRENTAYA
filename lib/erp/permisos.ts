@@ -10,6 +10,7 @@ export type Modulo =
   | 'ventas'
   | 'formularios'
   | 'leads'
+  | 'prospeccion'
   | 'links'
   | 'usuarios';
 
@@ -21,16 +22,17 @@ export const MODULOS: Array<{ id: Modulo; label: string; titulo: string; eyebrow
   { id: 'ventas', label: 'Ventas', titulo: 'Ventas', eyebrow: 'Operación' },
   { id: 'formularios', label: 'Formularios', titulo: 'Formularios', eyebrow: 'CRM' },
   { id: 'leads', label: 'Leads', titulo: 'Leads', eyebrow: 'CRM' },
+  { id: 'prospeccion', label: 'Prospección', titulo: 'Prospección de leads', eyebrow: 'CRM' },
   { id: 'links', label: 'Mis links', titulo: 'Mis links de agenda', eyebrow: 'CRM' },
   { id: 'usuarios', label: 'Usuarios', titulo: 'Usuarios y Permisos', eyebrow: 'Configuración' },
 ];
 
-const TODOS: Modulo[] = ['clientes', 'proveedores', 'libro', 'compras', 'ventas', 'formularios', 'leads', 'links', 'usuarios'];
+const TODOS: Modulo[] = ['clientes', 'proveedores', 'libro', 'compras', 'ventas', 'formularios', 'leads', 'prospeccion', 'links', 'usuarios'];
 
 export const PERMISOS: Record<Rol, Modulo[]> = {
   desarrollador: TODOS,
   admin: TODOS,
-  contador: ['clientes', 'proveedores', 'libro', 'compras', 'ventas', 'formularios', 'leads', 'links'],
+  contador: ['clientes', 'proveedores', 'libro', 'compras', 'ventas', 'formularios', 'leads', 'prospeccion', 'links'],
   vendedor: ['clientes', 'ventas', 'formularios', 'leads', 'links'],
   referido: ['formularios', 'leads', 'links'],
 };
