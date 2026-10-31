@@ -115,6 +115,9 @@ def a_fila(p: Prospecto, b: dict) -> dict:
         "fecha_captura": AHORA(),
         "dominio": p.dominio,
         "mensaje": f"Prospección: {b['tipo_negocio']} en {b['ciudad']}" + (f" — {resumen}" if resumen else ""),
+        # Quien lanzó la búsqueda queda como responsable (así el vendedor ve sus leads)
+        "responsable_id": b.get("creado_por"),
+        "created_by": b.get("creado_por"),
     }
 
 
