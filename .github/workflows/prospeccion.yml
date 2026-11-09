@@ -51,6 +51,10 @@ jobs:
         run: |
           pip install -r requirements.txt
           scrapling install
+          # Instala el Chromium exacto que pide la versión de patchright/playwright
+          # que quedó instalada (scrapling install puede quedar desfasado)
+          python -m patchright install --with-deps chromium
+          python -m playwright install chromium
 
       - name: Procesar búsquedas
         if: steps.cola.outputs.hay == '1'
