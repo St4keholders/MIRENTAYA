@@ -16,7 +16,7 @@ const TONO_BUSQUEDA: Record<BusquedaProspeccion['estado'], Tone> = {
   pendiente: 'yellow', procesando: 'sky', completada: 'green', error: 'red', cancelada: 'gray',
 };
 const ESTADOS_LEAD: Array<[Lead['estado'], string]> = [
-  ['nuevo', 'Nuevo'], ['contactado', 'Contactado'], ['propuesta', 'Propuesta'], ['ganado', 'Ganado'], ['perdido', 'Perdido'],
+  ['nuevo', 'Nuevo'], ['contactado', 'Contactado'], ['propuesta', 'Propuesta'], ['ganado', 'Ganado'], ['perdido', 'Perdido'], ['descartado', 'Descartado'],
 ];
 const NOMBRE_RED: Record<string, string> = {
   instagram: 'Instagram', facebook: 'Facebook', linkedin: 'LinkedIn', tiktok: 'TikTok', x: 'X', youtube: 'YouTube',
@@ -140,6 +140,15 @@ function LeadsProspectados({ busquedas, busqueda, setBusqueda, esAdmin, refresca
     catch (e) { notify((e as Error).message, 'error'); reload(); }
   };
 
+  const eliminar = async (l: Lead) => {
+    if (!confirm(`¿Eliminar el prospecto "${l.nombre}"?\n\nSe borra de la base y las próximas búsquedas no lo volverán a traer.`)) return;
+    try {
+      await api('/api/erp/leads', { method: 'DELETE', body: { id: l.id } });
+      setData((x) => x.filter((y) => y.id !== l.id));
+      notify('Prospecto eliminado');
+    } catch (e) { notify((e as Error).message, 'error'); }
+  };
+
   const exportar = () => descargarCSV(`prospeccion-${new Date().toISOString().slice(0, 10)}.csv`,
     ['Empresa', 'Teléfono', 'WhatsApp', 'Correo', 'Red principal', 'Ciudad', 'Estado', 'Puntaje', 'Web', 'Dirección', 'Dueño / gerente', 'Fuente'],
     filas.map((l) => [l.nombre, l.telefono, linkWhatsApp(l.telefono), l.email, l.red_principal, l.ciudad, l.estado, l.puntaje,
@@ -193,6 +202,16 @@ function LeadsProspectados({ busquedas, busqueda, setBusqueda, esAdmin, refresca
             </select>
           ) },
           { key: 'p', label: 'Puntaje', align: 'right', render: (l) => <Puntaje valor={l.puntaje} /> },
+          ...(esAdmin ? [{ key: 'x', label: '', align: 'right' as const, width: 24, render: (l: Lead) => (
+            <button type="button" aria-label={`Eliminar ${l.nombre}`} title="Eliminar prospecto"
+              onClick={(e) => { e.stopPropagation(); eliminar(l); }}
+              style={{ width: 24, height: 24, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6,
+                border: `1px solid ${t.border}`, background: 'transparent', color: t.subtext, cursor: 'pointer', fontSize: 15, lineHeight: 1 }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = t.isDark ? '#FF8080' : '#DC2626'; e.currentTarget.style.borderColor = t.isDark ? '#FF8080' : '#DC2626'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = t.subtext; e.currentTarget.style.borderColor = t.border; }}>
+              ×
+            </button>
+          ) }] : []),
         ]}
       />
     </Card>

@@ -74,6 +74,20 @@ export const DELETE = handler(async (req: Request) => {
   if (!esAdmin(s.rol)) throw new HttpError(403, 'Solo un administrador puede eliminar leads');
   const { id } = await leerJson<{ id?: string }>(req);
   if (!id) throw new HttpError(400, 'ID requerido');
-  ok(await erpDb().from('erp_leads').delete().eq('id', id));
+  const db = erpDb();
+  const lead = ok(await db.from('erp_leads').select('origen, telefono_norm, email_norm, dominio').eq('id', id).maybeSingle());
+  if (!lead) throw new HttpError(404, 'Lead no encontrado');
+  // Un prospecto eliminado no debe volver en la siguiente búsqueda
+  if (lead.origen === 'scraping') {
+    const bloqueos = [
+      lead.telefono_norm && { tipo: 'telefono', valor: lead.telefono_norm },
+      lead.email_norm && { tipo: 'email', valor: lead.email_norm },
+      lead.dominio && { tipo: 'dominio', valor: lead.dominio },
+    ].filter(Boolean).map((x) => ({ ...(x as { tipo: string; valor: string }), motivo: 'Eliminado de prospección', creado_por: s.id }));
+    if (bloqueos.length) {
+      ok(await db.from('erp_prospeccion_exclusiones').upsert(bloqueos, { onConflict: 'tipo,valor', ignoreDuplicates: true }));
+    }
+  }
+  ok(await db.from('erp_leads').delete().eq('id', id));
   return NextResponse.json({ success: true });
 });
