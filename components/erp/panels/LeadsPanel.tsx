@@ -10,7 +10,7 @@ import {
 
 const ESTADOS: Array<[Lead['estado'], string, Tone]> = [
   ['nuevo', 'Nuevo', 'sky'], ['contactado', 'Contactado', 'blue'], ['propuesta', 'Propuesta', 'yellow'],
-  ['ganado', 'Ganado', 'green'], ['perdido', 'Perdido', 'gray'],
+  ['ganado', 'Ganado', 'green'], ['perdido', 'Perdido', 'gray'], ['descartado', 'Descartado', 'red'],
 ];
 const ORIGEN: Record<string, string> = { manual: 'Manual', web: 'Sitio web', referido: 'Referido', renta_test: 'Test de renta', whatsapp: 'WhatsApp', scraping: 'Prospección', otro: 'Otro' };
 
@@ -108,7 +108,7 @@ function EmbudoCRM({ esAdmin, puedeClientes }: { esAdmin: boolean; puedeClientes
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
         {ESTADOS.map(([e, label, tone]) => {
           const on = estado === e;
-          const color = tone === 'green' ? t.green : tone === 'yellow' ? t.amber : tone === 'gray' ? t.subtext : t.sky;
+          const color = tone === 'green' ? t.green : tone === 'yellow' ? t.amber : tone === 'gray' ? t.subtext : tone === 'red' ? (t.isDark ? C.red : '#DC2626') : t.sky;
           return (
             <button key={e} onClick={() => setEstado(on ? 'todos' : e)} style={{
               textAlign: 'left', background: on ? 'rgba(255,255,255,0.08)' : t.cardBg, border: `1px solid ${on ? 'rgba(255,255,255,0.22)' : t.border}`,
@@ -149,9 +149,9 @@ function EmbudoCRM({ esAdmin, puedeClientes }: { esAdmin: boolean; puedeClientes
             { key: 'e', label: 'Etapa', render: (l) => (
               <select value={l.estado} onChange={(e) => cambiarEstado(l, e.target.value)} onClick={(e) => e.stopPropagation()}
                 style={{ ...sel, width: 'auto', padding: '6px 10px', fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 600,
-                  background: l.estado === 'ganado' ? 'rgba(78,214,161,0.15)' : l.estado === 'perdido' ? t.softBg : 'rgba(61,107,255,0.12)',
+                  background: l.estado === 'ganado' ? 'rgba(78,214,161,0.15)' : (l.estado === 'perdido' || l.estado === 'descartado') ? t.softBg : 'rgba(61,107,255,0.12)',
                   border: `1px solid ${l.estado === 'ganado' ? 'rgba(78,214,161,0.4)' : 'rgba(61,107,255,0.3)'}`,
-                  color: l.estado === 'ganado' ? t.green : l.estado === 'perdido' ? t.subtext : t.sky }}>
+                  color: l.estado === 'ganado' ? t.green : (l.estado === 'perdido' || l.estado === 'descartado') ? t.subtext : t.sky }}>
                 {ESTADOS.map(([v, lab]) => <option key={v} value={v} style={{ background: t.modalBg, color: t.text }}>{lab}</option>)}
               </select>
             ) },

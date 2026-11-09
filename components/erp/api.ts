@@ -110,7 +110,7 @@ export interface Lead {
   telefono: string | null;
   servicio: string;
   origen: string;
-  estado: 'nuevo' | 'contactado' | 'propuesta' | 'ganado' | 'perdido';
+  estado: 'nuevo' | 'contactado' | 'propuesta' | 'ganado' | 'perdido' | 'descartado';
   valor_estimado: number | null;
   mensaje: string | null;
   notas: string | null;
